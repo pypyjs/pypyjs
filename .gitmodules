@@ -1,0 +1,3 @@
+[submodule "pypy"]
+	path = pypy
+	url = git://github.com/rfk/pypy.git
