@@ -1,0 +1,34 @@
+
+* file descriptors start at 1 in emscripten
+
+* pypy thinks we have st_atim, when we don't
+
+* sizeof off_t is not longlong
+
+* CallDescr and function pointers in the JIT; we need to re-work this
+  to make sure that calls are being done, and to work around the
+  pointer-aliasing issues that are unique to emscripten.
+   * for now, we're using ALISING_FUNCTION_POINTERS=0 in emscripten settings,
+     but this generates a significant increase in code size.
+   * things to do to fix
+     * fix indexing of bytcode_for_address to take into account the calldescr
+       as well as the function pointer address
+
+* use emscripten_get_now() for performance timing?
+
+* pypy'c gc doesn't malloc at aligned boundaries, so we have to force
+  emscripten to generate workaround code for this.  Can we fix it in
+  pypy with a little bit of hackery?
+    * in the meantime, setenv EMCC_LLVM_TARGET=i386-pc-linux-gnu to force
+      it to assume 4-byte-aligned fields.
+
+* startup time: ~30s just to allocate ~8.5M of static global data!
+   * it's currently built as an array, then copied into the heap
+   * most of the time is spent just building the initial array
+   * idea: load it from a data URI (or a series thereof) or even just
+     a separate file, via xhr with responseType='arraybuffer'.
+
+* things to try:
+  * experiment with --gcremovetypeptr, see what difference it makes
+    to memory usage, and make sure the jit still works
+  * --clever-malloc-removal
