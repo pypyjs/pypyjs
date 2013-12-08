@@ -4,7 +4,7 @@ import sys
 
 
 CREATE_DIR = "Module['FS_createFolder'](%r, %r, true, true);"
-CREATE_FILE = "Module['FS_createLazyFile'](%r, %r, %r true, true);"
+CREATE_FILE = "Module['FS_createLazyFile'](%r, %r, %r, true, true);"
 
 created_paths = set()
 
@@ -12,7 +12,7 @@ created_paths = set()
 def create_parents(pathname):
     parent, _ = os.path.split(pathname[1:])
     if parent and parent not in created_paths:
-        create_parents(parent)
+        create_parents("/" + parent)
         gparent, parentnm = os.path.split(parent)
         print CREATE_DIR % (gparent, parentnm)
         created_paths.add(parent)
@@ -31,7 +31,7 @@ def create_children(rootdir):
                 created_paths.add(dirpath[1:])
                 for filename in filenames:
                     filepath = os.path.join(dirpath, filename)
-                    print CREATE_FILE % (dirpath[1:], filename, filepath)
+                    print CREATE_FILE % (dirpath[1:], filename, '.'+filepath)
                     created_paths.add(filepath[1:])
 
 if __name__ == "__main__":
