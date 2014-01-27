@@ -1,0 +1,10 @@
+These tests currently fail on win32:
+
+test_unicode_file    IN-PROGRESS: implement unicode filesystem.
+                     (see branch/unicode_filename)
+test_univnewlines    INCORRECT FIX: os.popen('echo 1') should not return
+                     '1\r\n'
+                     Either we cheat and give subprocess universalnewlines on windows in popen,
+                     or we teach subprocess some impl specific things about windows,
+                     or we revert to the old approach for non seekable streams if there's a sane way to detect that.
+

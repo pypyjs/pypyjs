@@ -1,3 +1,10 @@
+SOON:
+
+ * finish libffi implementation for emscripten
+ * get all the testcases passing again
+
+
+EVENTUALLY:
 
 * file descriptors start at 1 in emscripten
 
@@ -22,13 +29,22 @@
     * in the meantime, setenv EMCC_LLVM_TARGET=i386-pc-linux-gnu to force
       it to assume 4-byte-aligned fields.
 
-* startup time: ~30s just to allocate ~8.5M of static global data!
-   * it's currently built as an array, then copied into the heap
-   * most of the time is spent just building the initial array
-   * idea: load it from a data URI (or a series thereof) or even just
-     a separate file, via xhr with responseType='arraybuffer'.
+* it's very easy to blow the stack on chrome on linux; not sure about other platforms
+  * currently we can only execute about 4 python frames deep before it blows!
+  * I suspect it's because dispatch_bytecode and friends have lots of local variables, so they take up lots of stack space.
+
+* have to figure out the "stack check" thing and what I need to do to
+  make it work in the jit, and in js in general
 
 * things to try:
   * experiment with --gcremovetypeptr, see what difference it makes
     to memory usage, and make sure the jit still works
   * --clever-malloc-removal
+
+* llvm `mergefunc` to merge a bunch of trivial, identical helper functions
+
+* FUNCTION_POINTER_ALIGNMENT = 1
+
+* --llvm-lto=3
+
+* using closure on the compiled shell

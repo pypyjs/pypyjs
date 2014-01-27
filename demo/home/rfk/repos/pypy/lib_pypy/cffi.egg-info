@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: cffi
+Version: 0.6
+Summary: Foreign Function Interface for Python calling C code.
+Home-page: http://cffi.readthedocs.org
+Author: Armin Rigo, Maciej Fijalkowski
+Author-email: python-cffi@googlegroups.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN

@@ -76,9 +76,14 @@
                   jqconsole.Reset();
                   break;
                 case 'ready':
+                  console.log(msg);
                   startPrompt();
                   break;
               }
+              break;
+            case 'error':
+              console.log('WORKER ERROR:', msg.data)
+              alert(msg.data);
               break;
             case 'debug':
               if (!hasLoaded) {
