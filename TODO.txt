@@ -23,18 +23,9 @@ EVENTUALLY:
 
 * use emscripten_get_now() for performance timing?
 
-* pypy'c gc doesn't malloc at aligned boundaries, so we have to force
-  emscripten to generate workaround code for this.  Can we fix it in
-  pypy with a little bit of hackery?
-    * in the meantime, setenv EMCC_LLVM_TARGET=i386-pc-linux-gnu to force
-      it to assume 4-byte-aligned fields.
-
-* it's very easy to blow the stack on chrome on linux; not sure about other platforms
-  * currently we can only execute about 4 python frames deep before it blows!
-  * I suspect it's because dispatch_bytecode and friends have lots of local variables, so they take up lots of stack space.
-
 * have to figure out the "stack check" thing and what I need to do to
-  make it work in the jit, and in js in general
+  make it work in the jit, and in js in general (this is the thing that
+  raises a nice python-level error when you recurse too much)
 
 * things to try:
   * experiment with --gcremovetypeptr, see what difference it makes
@@ -42,8 +33,7 @@ EVENTUALLY:
   * --clever-malloc-removal
 
 * llvm `mergefunc` to merge a bunch of trivial, identical helper functions
-
-* FUNCTION_POINTER_ALIGNMENT = 1
+  * this may not work, we should consider a similar pass for emscripten
 
 * --llvm-lto=3
 
