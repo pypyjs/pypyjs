@@ -86,11 +86,11 @@
               alert(msg.data);
               break;
             case 'debug':
-              if (!hasLoaded) {
-                jqconsole.Write(msg.data + "\n", 'jqconsole-output');
-              } else {
+              //if (!hasLoaded) {
+              //  jqconsole.Write(msg.data + "\n", 'jqconsole-output');
+              //} else {
                 console.log('WORKER DEBUG:', msg.data);
-              }
+              //}
               break;
             case 'stdout':
             case 'stderr':

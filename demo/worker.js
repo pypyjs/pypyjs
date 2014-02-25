@@ -22,6 +22,10 @@ function stderr(x) {
   self.postMessage({type: 'stderr', data: x})
 }
 
+function debugit(x) {
+  self.postMessage({type: 'debug', data: x})
+}
+
 function onerror(e) {
   if (typeof console != 'undefined') {
     console.log(e.stack)

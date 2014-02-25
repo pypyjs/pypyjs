@@ -3,10 +3,23 @@ SOON:
  * finish libffi implementation for emscripten
  * get all the testcases passing again
 
+improve the jitted code:
+ * compile everything into a single module to avoid func call overhead
+ * generate switch or if or something else depending on the conditions
+   that we're actually processing, rather than always doing a switch.
+ * avoid lots of pointless swapping of variables
+ * suspended exprs to reduce variable pressure
+ * tighten up code around func calls
+    * don't use the frame for gcroot, to reduce need for write barrier?
+    * don't spill thing to frame if they're already there
+ * shared helper code for failing guards?
+ * remove unneeded conversions to unsigned e.g. in write barrier?
+ * reduce number of comparisons in write barrier
+ * somehow reduce overhead of dynCall_XXX()?
+   * maybe send relevant funcs into the jitted code via plt?
+
 
 EVENTUALLY:
-
-* file descriptors start at 1 in emscripten
 
 * pypy thinks we have st_atim, when we don't
 
