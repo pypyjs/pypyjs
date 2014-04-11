@@ -65,7 +65,7 @@
           });
         };
         var hasLoaded = false;
-        jqconsole.Write('Loading PyPyJS\n\n', 'jqconsole-output');
+        jqconsole.Write('Loading PyPyJS, this might take a while...\n\n', 'jqconsole-output');
         worker.addEventListener('message', function(e) {
           var msg = e.data;
           switch (msg.type) {
