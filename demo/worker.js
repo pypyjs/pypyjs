@@ -52,7 +52,7 @@ Module.preRun = function() {
     // state and them leave it for us to play with.
     Module['_main'] = function(argc, argv, wtf) {
       self.postMessage({type: 'status', data: 'loaded'})
-      Module['_RPython_StartupCode']();
+      Module['_rpython_startup_code']();
       var pypy_home = allocate(intArrayFromString(""), 'i8', ALLOC_NORMAL);
       Module['_pypy_setup_home'](pypy_home, 0);
       var pypy_code = allocate(intArrayFromString("import code\nc = code.InteractiveConsole()"), 'i8', ALLOC_NORMAL);
