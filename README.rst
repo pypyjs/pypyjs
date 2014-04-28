@@ -15,3 +15,14 @@ mainline PyPy repo:
 
     https://github.com/rfk/pypy
 
+To build it you will need a 32bit python environment, along with this fork
+of emscripten:
+
+    https://github.com/rfk/emscripten
+
+Run the build like so:
+
+    $> cd ./pypy
+    $> python ./rpython/bin/rpython --backend=js --opt=jit ./pypy/goal/targetpypystandalone.py
+
+This will produce a file "pypy-js" containing the interpreter.  Take a look in the "demo" directory for an example of distributing this file.

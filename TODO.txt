@@ -3,6 +3,9 @@ SOON:
  * finish libffi implementation for emscripten
  * get all the testcases passing again
 
+ * name the memory file after a hash of its contents, to avoid
+   weirdness from caching an incorrect version of the file
+
 improve the jitted code:
  * compile everything into a single module to avoid func call overhead
  * generate switch or if or something else depending on the conditions
@@ -25,29 +28,10 @@ EVENTUALLY:
 
 * sizeof off_t is not longlong
 
-* CallDescr and function pointers in the JIT; we need to re-work this
-  to make sure that calls are being done, and to work around the
-  pointer-aliasing issues that are unique to emscripten.
-   * for now, we're using ALISING_FUNCTION_POINTERS=0 in emscripten settings,
-     but this generates a significant increase in code size.
-   * things to do to fix
-     * fix indexing of bytcode_for_address to take into account the calldescr
-       as well as the function pointer address
-
 * use emscripten_get_now() for performance timing?
 
 * have to figure out the "stack check" thing and what I need to do to
   make it work in the jit, and in js in general (this is the thing that
   raises a nice python-level error when you recurse too much)
-
-* things to try:
-  * experiment with --gcremovetypeptr, see what difference it makes
-    to memory usage, and make sure the jit still works
-  * --clever-malloc-removal
-
-* llvm `mergefunc` to merge a bunch of trivial, identical helper functions
-  * this may not work, we should consider a similar pass for emscripten
-
-* --llvm-lto=3
 
 * using closure on the compiled shell
