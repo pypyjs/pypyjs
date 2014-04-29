@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>PyPyJS Quick-n-Dirty Demo</title>
+<title>PyPy.js Quick-n-Dirty Demo</title>
 <link rel="stylesheet" href="./css/ansi.css" type="text/css" />
 <style type="text/css">
     /* The console container element */
@@ -65,7 +65,7 @@
           });
         };
         var hasLoaded = false;
-        jqconsole.Write('Loading PyPyJS, this might take a while...\n\n', 'jqconsole-output');
+        jqconsole.Write('Loading PyPy.js, this might take a while...\n\n', 'jqconsole-output');
         worker.addEventListener('message', function(e) {
           var msg = e.data;
           switch (msg.type) {

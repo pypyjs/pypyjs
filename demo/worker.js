@@ -58,7 +58,7 @@ Module.preRun = function() {
       var pypy_code = allocate(intArrayFromString("import code\nc = code.InteractiveConsole()"), 'i8', ALLOC_NORMAL);
       Module['_pypy_execute_source'](pypy_code);
       Module['_free'](pypy_code);
-      pypy_push_input("print 'welcome to pypy.js'", true)
+      pypy_push_input("print 'Welcome to PyPy.js'", true)
       pypy_push_input("from test import pystone", true)
       self.postMessage({type: 'status', data: 'ready'})
       return 0;
