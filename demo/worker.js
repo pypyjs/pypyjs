@@ -87,22 +87,22 @@ function pypy_push_input(code, nomsg) {
 
 debug('fetching asmjs code...')
 
-try {
-  importScripts('./pypy-js.js');
-} catch (e) {
-  onerror(e)
+//try {
+//  importScripts('./pypy-js.js');
+//} catch (e) {
+//  onerror(e)
+//}
+
+var xhr = new XMLHttpRequest();
+xhr.open('GET', './pypy-js.js', false);
+xhr.send(null);
+if (xhr.status >= 400) {
+  onerror('failed to load pypy-js.js');
 }
 
-//var xhr = new XMLHttpRequest();
-//xhr.open('GET', './pypy-js.js', false);
-//xhr.send(null);
-//if (xhr.status >= 400) {
-//  throw new Error('failed to load pypy-js.js');
-//}
-//
-//debug('loading asmjs code...')
-//
-//eval(xhr.responseText)
+debug('loading asmjs code...')
+
+eval(xhr.responseText)
 
 self.addEventListener('message', function(e) {
   var msg = e.data;
