@@ -71,7 +71,8 @@ Module.preRun = function() {
 function pypy_push_input(code, nomsg) {
   try {
     if (!nomsg) self.postMessage({type: 'status', data: 'working'})
-    code = "c.push('" + code.replace(/'/g, "\\'") + "')"
+    code = code.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    code = "c.push('" + code + "')"
     var pypy_code = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
     var res = Module['_pypy_execute_source'](pypy_code);
     Module['_free'](pypy_code);
