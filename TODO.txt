@@ -31,7 +31,7 @@ EVENTUALLY:
 * use emscripten_get_now() for performance timing?
 
 * have to figure out the "stack check" thing and what I need to do to
-  make it work in the jit, and in js in general (this is the thing that
-  raises a nice python-level error when you recurse too much)
+  make it work in the jit, and in js in general (I think this is the thing
+  that raises a nice python-level error when you recurse too much)
 
 * using closure on the compiled shell

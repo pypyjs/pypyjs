@@ -10,19 +10,30 @@ for my experimental emscripten/asmjs backend for PyPy, as described here:
 
     https://www.rfk.id.au/blog/entry/pypy-js-first-steps/
 
-The actual PyPy backend is maintained as a git submodule on top of the
-mainline PyPy repo:
+The actual PyPy backend is maintained as a git submodule pointing to a fork
+of a github clone of the upstream PyPy repository:
 
     https://github.com/rfk/pypy
 
-To build it you will need a 32bit python environment, along with this fork
-of emscripten:
+Building it requires a 32-bit python environment and the emscripten-enabled
+LLVM toolchain.  The makefile can build these automatically for you::
 
-    https://github.com/rfk/emscripten
+    $> make deps
 
-Run the build like so:
+Be warned, this will take a *long* time.  Once it's done you can build
+the pypy.js javascript file with::
 
-    $> cd ./pypy
-    $> python ./rpython/bin/rpython --backend=js --opt=jit ./pypy/goal/targetpypystandalone.py
+    $> make
 
-This will produce a file "pypy-js" containing the interpreter.  Take a look in the "demo" directory for an example of distributing this file.
+Again, this will take a *long* time.  It will eventually produce the file
+`./build/pypy.js` containing the code for the interpreter.  Take a look in
+the `./website/demo` directory for an example of how to distribute and use
+this file.
+
+To build from an in-progress branch of the pypy repository, check it out
+in the submodule like so::
+
+    $> cd ./deps/pypy
+    $> git checkout whatever-branch
+    $> cd ../../
+    $> make
