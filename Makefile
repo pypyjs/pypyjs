@@ -8,7 +8,7 @@ all: ./build/pypy.js
 # in "release mode", optimized for deployment to the web.  It trades
 # off some debuggability in exchange for reduced code size.
 ./build/pypy.js: deps
-	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: build separate memory initializer.
 	# XXX TODO: build without rpython traceback information.
 	# XXX TODO: use closure compiler on the shell code.
@@ -17,7 +17,7 @@ all: ./build/pypy.js
 # This builds a debugging-friendly version that is bigger but has e.g. 
 # more asserts and better traceback information.
 ./build/pypy.debug.js: deps
-	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --inline-threshold=25 --output=./build/pypy.debug.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy.debug.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: use "emcc -g2" for readability of output file.
 
 
