@@ -129,6 +129,11 @@ def main(args=None):
 
     for f in files:
         output = cromulate(f, opts)
+        # XXX TODO: if we wanted to get really fancy, we could calculate
+        # the expected saving of the new ordering and then pass it through
+        # the cromulation again, iterating until we fail to improve the
+        # existing ordering in the file.  This would also guard against
+        # accidentally increasing the file size.
         if opts.stdout:
             sys.stdout.write(output)
         else:
