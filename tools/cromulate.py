@@ -111,7 +111,7 @@ def main(args=None):
     usage = "usage: %prog [options] [file ...]"
     descr = "Improve compressibility of emscripten-generated javascript"
     parser = optparse.OptionParser(usage=usage, description=descr)
-    parser.add_option("-w", "--window-size", type=int, default=200,
+    parser.add_option("-w", "--window-size", type=int, default=500,
                       metavar="SZ",
                       help="number of functions to consider per step")
     parser.add_option("-l", "--compress-level", type=int, default=9,
