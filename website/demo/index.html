@@ -52,56 +52,38 @@
     <p>This is a highly experimental version of <a href="http://pypy.org/">PyPy</a> compiled into javascript via <a href="http://emscripten.org">Emscripten</a>, with a JIT backend that emits <a href="http://asmjs.org">asmjs</a>.</p>
     <p><a href="https://github.com/rfk/pypyjs">https://github.com/rfk/pypyjs/</a></p>
     <div id="console"></div>
+    <script src="./lib/pypy.js" type="text/javascript" charset="utf-8"></script>
     <script src="./jquery.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="./jquery-migrate-1.2.1.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="./jqconsole.min.js" type="text/javascript" charset="utf-8"></script>
     <script>
-      var worker = new Worker('worker.js')
+      var vm = new PyPyJS();
       $(function () {
         window.jqconsole = $('#console').jqconsole('', '>>> ');
-        var startPrompt = function () {
-          jqconsole.Prompt(true, function (input) {
-            worker.postMessage({type: 'input', data: input});
-          });
-        };
-        var hasLoaded = false;
-        jqconsole.Write('Loading PyPy.js.  It\'s big, so this might take a while...\n\n', 'jqconsole-output');
-        worker.addEventListener('message', function(e) {
-          var msg = e.data;
-          switch (msg.type) {
-            case 'status':
-              switch (msg.data) {
-                case 'loaded':
-                  hasLoaded = true;
-                  jqconsole.Reset();
-                  break;
-                case 'ready':
-                  console.log(msg);
-                  startPrompt();
-                  break;
-              }
-              break;
-            case 'error':
-              console.log('WORKER ERROR:', msg.data)
-              alert(msg.data);
-              break;
-            case 'debug':
-              //if (!hasLoaded) {
-              //  jqconsole.Write(msg.data + "\n", 'jqconsole-output');
-              //} else {
-                console.log('WORKER DEBUG:', msg.data);
-              //}
-              break;
-            case 'stdout':
-            case 'stderr':
-              if (msg.data) {
-                x = String.fromCharCode(msg.data);
-                jqconsole.Write(x, 'jqconsole-output');
-              }
-              break;
-            default:
-              console.log("UNKNOWN MESSAGE", msg);
-          }
+        // Send all VM output to the console.
+        vm.stdout = vm.stderr = function(data) {
+          jqconsole.Write(data, 'jqconsole-output');
+        }
+        // Display a helpful message and twiddle thumbs as it loads.
+        vm.stdout('Loading PyPy.js.\n')
+        vm.stdout('It\'s big, so this might take a while...\n\n')
+        vm.initialize(function(err) {
+          jqconsole.Reset();
+          vm.stdout('Welcome to PyPy.js!\n')
+          // Create an 'InteractiveConsole' to simulate the python shell.
+          vm.eval('import code');
+          vm.eval('c = code.InteractiveConsole()');
+          // Prompt for input, send it to the console, rinse, repeat.
+          var doPrompt = function () {
+            jqconsole.Prompt(true, function (input) {
+              var code = input.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+              code = 'c.push(\'' + code + '\')';
+              // XXX TODO: get return value so we can adjust prompt.
+              vm.eval(code)
+              setTimeout(doPrompt, 0);
+            });
+          };
+          doPrompt();
         });
       });
     </script>

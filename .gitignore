@@ -3,3 +3,5 @@
 *~
 *.swp
 build
+lib/stdlib.*
+lib/pypy.vm.*
