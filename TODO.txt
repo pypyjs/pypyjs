@@ -1,4 +1,9 @@
+
 SOON:
+
+ * exclude nonsense modules from bundle_modules, e.g. "readline"
+    - also there are optional dependencies that make us pull in a lot
+      of stuff, e.g. "import code" eventually pulls in all of cffi.
 
  * finish libffi implementation for emscripten
  * get all the testcases passing again
@@ -14,7 +19,7 @@ improve the jitted code:
  * suspended exprs to reduce variable pressure
  * tighten up code around func calls
     * don't use the frame for gcroot, to reduce need for write barrier?
-    * don't spill thing to frame if they're already there
+    * don't spill things to frame if they're already there
  * shared helper code for failing guards?
  * remove unneeded conversions to unsigned e.g. in write barrier?
  * reduce number of comparisons in write barrier
@@ -29,6 +34,8 @@ EVENTUALLY:
 * sizeof off_t is not longlong
 
 * use emscripten_get_now() for performance timing?
+
+* use emscripten_sleep() for sleeping
 
 * have to figure out the "stack check" thing and what I need to do to
   make it work in the jit, and in js in general (I think this is the thing
