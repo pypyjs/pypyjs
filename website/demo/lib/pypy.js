@@ -32,18 +32,12 @@ function PyPyJS(opts) {
     // A little hackery to find the URL of this very file.
     // Throw an error, then parse the stack trace looking for filenames.
     var errlines = (new Error()).stack.split("\n");
-    SEARCHLOOP: for (var i = 0; i < errlines.length; i++) {
-      var endpos = errlines[i].lastIndexOf("pypy.js");
-      if (endpos !== -1) {
-        var starts = ["@", "at "];
-        for (j = 0; j < starts.length; j++) {
-          var startpos = errlines[i].indexOf(starts[j]);
-          if (startpos !== -1 && startpos < endpos) {
-            startpos += starts[j].length;
-            PyPyJS.rootURL =  errlines[i].substring(startpos, endpos);
-            break SEARCHLOOP;
-          }
-        }
+    console.log(errlines);
+    for (var i = 0; i < errlines.length; i++) {
+      var match = /(https?:\/\/.+\/)pypy.js/.exec(errlines[i]);
+      if (match) {
+        PyPyJS.rootURL = match[1];
+        break;
       }
     }
   }
