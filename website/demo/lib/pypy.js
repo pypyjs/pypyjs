@@ -56,7 +56,8 @@ function PyPyJS(opts) {
       // We will set up the filesystem manually when we're ready.
       Module.noFSInit = true;
       Module.thisProgram = "/lib/pypyjs/pypy.js";
-      Module.filePackagePrefixURL = this.rootURL;
+      Module.filePackagePrefixURL = this.rootURL || PyPyJS.rootURL;
+      Module.memoryInitializerPrefixURL = this.rootURL || PyPyJS.rootURL;
 
       // Don't start or stop the program, just set it up.
       // We'll call the API functions ourself.
@@ -87,10 +88,11 @@ function PyPyJS(opts) {
         this.stderr(c);
       }).bind(this);
  
-      // Fetch the metadata for available python modules.
-      // This can download while we jank around compiling the javascript.
-      // XXX TODO: also download the memory initializer at this time.
-      var filesP = this.fetch("modules/index.json");
+      // Begin fetching the metadata for available python modules.
+      //  With luck these can download while we jank around compiling
+      //  all of tha javascript.
+      //  XXX TODO: also load memory initialier this way.
+      var moduleDataP = this.fetch("modules/index.json");
 
       // Eval the code.  This will probably take quite a while in Firefox
       // as it parses and compiles all the functions.  The result is that
@@ -98,38 +100,52 @@ function PyPyJS(opts) {
       console.log("evaluating asmjs code...");
       eval(xhr.responseText);
 
-      // Initialize the VM state.
-      console.log("initialising the vm...");
-      FS.init(stdin, stdout, stderr);
-      Module.FS_createPath("/", "lib/pypyjs/lib_pypy", true, false);
-      Module.FS_createPath("/", "lib/pypyjs/lib-python/2.7", true, false);
-      Module._rpython_startup_code();
-      var pypy_home = Module.intArrayFromString("/lib/pypyjs/pypy.js");
-      pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
-      Module._pypy_setup_home(pypy_home, 0);
-      Module._free(pypy_home);
-
       // Make the module available on this object.
       // We will use its methods to execute code in the VM.
-      console.log("pypy.js is ready!");
       this._module = Module;
- 
-      // Continue with processing of the available python modules.
-      return filesP;
-      
-    }).bind(this))
-    .then((function(xhr) {
 
-      var modIndex = JSON.parse(xhr.responseText);
-      this._allModules = modIndex.modules;
-      if (modIndex.eager) {
-        for (var name in modIndex.eager) {
-          this._writeModuleFile(name, modIndex.eager[name]);
+      // This is where execution will continue after loading
+      // the memory initialization data.
+      var initializedResolve, initializedReject;
+      var initializedP = new Promise(function(resolve, reject) {
+          initializedResolve = resolve;
+          initializedReject = reject;
+      });
+      dependenciesFulfilled = function() {
+        // Initialize the VM state.
+        try {
+          console.log("initialising the vm...");
+          FS.init(stdin, stdout, stderr);
+          Module.FS_createPath("/", "lib/pypyjs/lib_pypy", true, false);
+          Module.FS_createPath("/", "lib/pypyjs/lib-python/2.7", true, false);
+          Module._rpython_startup_code();
+          var pypy_home = Module.intArrayFromString("/lib/pypyjs/pypy.js");
+          pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
+          Module._pypy_setup_home(pypy_home, 0);
+          Module._free(pypy_home);
+          initializedResolve();
+        } catch (err) {
+          initializedReject(err);
         }
       }
-
+  
+      return initializedP.then((function() {
+        // Continue with processing the downloaded module metadata.
+        return moduleDataP.then((function(xhr) {
+          console.log("loading module index...");
+          // Store the module index, and load any eager ones.
+          var modIndex = JSON.parse(xhr.responseText);
+          this._allModules = modIndex.modules;
+          if (modIndex.eager) {
+            for (var name in modIndex.eager) {
+              this._writeModuleFile(name, modIndex.eager[name]);
+            }
+          }
+          console.log("pypy.js is ready!");
+        }).bind(this));
+      }).bind(this))
     }).bind(this))
-    .then(resolve, reject);
+    .then(resolve, function(err){ console.log(err); reject(err)});
 
   }).bind(this));
 
@@ -139,10 +155,11 @@ function PyPyJS(opts) {
 // A simple file-fetching wrapper around XMLHttpRequest,
 // that treats paths as relative to the pypy.js root url.
 //
-PyPyJS.prototype.fetch = function fetch(relpath) {
+PyPyJS.prototype.fetch = function fetch(relpath, responseType) {
   return new Promise((function(resolve, reject) {
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
+      console.log("loaded", relpath);
       if (xhr.status >= 400) {
         reject(xhr)
       } else {
@@ -151,6 +168,7 @@ PyPyJS.prototype.fetch = function fetch(relpath) {
     };
     var rootURL = this.rootURL || PyPyJS.rootURL;
     xhr.open('GET', rootURL + relpath, true);
+    xhr.responseType = responseType || "string";
     xhr.send(null);
   }).bind(this));
 };

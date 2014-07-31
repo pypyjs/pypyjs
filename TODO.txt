@@ -5,11 +5,14 @@ SOON:
     - also there are optional dependencies that make us pull in a lot
       of stuff, e.g. "import code" eventually pulls in all of cffi.
 
- * finish libffi implementation for emscripten
+ * manually extract the memory initializer and put it somewhere we
+   can load it easily.
+
  * get all the testcases passing again
 
  * name the memory file after a hash of its contents, to avoid
    weirdness from caching an incorrect version of the file
+
 
 improve the jitted code:
  * compile everything into a single module to avoid func call overhead
