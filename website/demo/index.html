@@ -59,8 +59,9 @@
     <script src="./jqconsole.min.js" type="text/javascript" charset="utf-8"></script>
     <script>
       $(function () {
+        // Global vars, for easy debugging in console.
         window.jqconsole = $('#console').jqconsole('', '>>> ');
-        var vm = new PyPyJS();
+        window.vm = new PyPyJS();
         // Send all VM output to the console.
         vm.stdout = vm.stderr = function(data) {
           jqconsole.Write(data, 'jqconsole-output');
@@ -75,13 +76,21 @@
           vm.eval('import code').then(function() {
             vm.eval('c = code.InteractiveConsole()').then(function() {
               // Prompt for input, send it to the console, rinse, repeat.
-              var doPrompt = function () {
+              window.doPrompt = function () {
                 jqconsole.Prompt(true, function (input) {
                   var code = input.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-                  code = 'c.push(\'' + code + '\')';
-                  // XXX TODO: get return value so we can adjust prompt.
+                  code = 'r = c.push(\'' + code + '\')';
                   vm.eval(code).then(function() {
-                    setTimeout(doPrompt, 0);
+                    return vm.get('r').then(function(r) {
+                      // r==1 means that it's a multi-line definition,
+                      // so change the prompt accordingly.
+                      if (r) {
+                        jqconsole.SetPromptLabel("... ");
+                      } else {
+                        jqconsole.SetPromptLabel(">>> ");
+                      }
+                      setTimeout(doPrompt, 0);
+                    });
                   });
                 });
               };
