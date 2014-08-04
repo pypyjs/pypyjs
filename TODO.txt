@@ -9,6 +9,10 @@ developer niceties:
   * high-level intro to the various modules, where they live
     and what they do
 
+  * mac:
+      * brew install bdw-gc with universal build "--universal"
+      * also libffi?
+
 
 SOON:
 
