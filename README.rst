@@ -15,8 +15,7 @@ of a github clone of the upstream PyPy repository:
 
     https://github.com/rfk/pypy
 
-You can get all of the necessary dependencies by checking out this repository
-and doing::
+You can get all the necessary code by checking out this repository and doing::
 
     $> git submodule init
     $> git submodule update
@@ -25,14 +24,15 @@ Building it requires a 32-bit python environment and the emscripten-enabled
 LLVM toolchain.  The makefile can build these automatically for you::
 
     $> make deps
+    $> source ./build/deps/bin/activate
 
 Be warned, this will take a *long* time.  Once it's done you can build
-the pypy.js javascript file with::
+the pypy.vm.js javascript file with::
 
     $> make
 
 Again, this will take a *long* time.  It will eventually produce the file
-`./build/pypy.js` containing the code for the interpreter.  Take a look in
+`./build/pypy.vm.js` containing the code for the interpreter.  Take a look in
 the `./website/demo` directory for an example of how to distribute and use
 this file.
 
@@ -43,3 +43,9 @@ in the submodule like so::
     $> git checkout whatever-branch
     $> cd ../../
     $> make
+
+You can also run the testsuite like this::
+
+    $> make test-jit-backend
+
+
