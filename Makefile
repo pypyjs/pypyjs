@@ -37,6 +37,18 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH emcc --version > /dev/null
 
 
+# Running the tests requires a local install of "libffi".
+./build/deps/lib/libffi-3.1/include/ffi.h:
+	mkdir -p ./build/deps
+	mkdir -p ./build/tmp
+	# XXX TODO: https or digest verification on this file...
+	wget -O ./build/tmp/libffi-3.1.gz ftp://sourceware.org/pub/libffi/libffi-3.1.tar.gz
+	cd ./build/tmp ; tar -xzvf libffi-3.1.gz
+	cd ./build/tmp/libffi-3.1 ; ./configure --prefix=$(CURDIR)/build/deps --includedir=$(CURDIR)/build/deps/include CC="gcc -m32"
+	cd ./build/tmp/libffi-3.1 ; make
+	cd ./build/tmp/libffi-3.1 ; make install
+
+
 # Running the tests requires a local install of "libgc".
 ./build/deps/include/gc.h:
 	mkdir -p ./build/deps
@@ -85,7 +97,7 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	rm -rf ./build/tmp/emscripten
 
 .PHONY: test-jit-backend
-test-jit-backend: ./build/deps/bin/python ./build/deps/include/gc.h
+test-jit-backend: ./build/deps/bin/python ./build/deps/include/gc.h ./build/deps/lib/libffi-3.1/include/ffi.h
 	cd ./deps/pypy/rpython/jit/backend/asmjs ; LD_LIBRARY_PATH="../../../../../../build/deps/lib" CC="gcc -m32 -I$(CURDIR)/deps/pypy/rpython/translator/platform/emscripten_platform -I$(CURDIR)/build/deps/include -L$(CURDIR)/build/deps/lib" ../../../../../../build/deps/bin/python ../../../../pytest.py -vx
 
 
