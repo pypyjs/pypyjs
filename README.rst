@@ -16,7 +16,7 @@ of a github clone of the upstream PyPy repository:
     https://github.com/rfk/pypy
 
 You can get all of the necessary dependencies by checking out this repository
-and doing:
+and doing::
 
     $> git submodule init
     $> git submodule update
