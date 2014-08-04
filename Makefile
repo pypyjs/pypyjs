@@ -38,7 +38,7 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 
 
 # Running the tests requires a local install of "libgc".
-./build/deps/lib/libgc.so:
+./build/deps/include/gc.h:
 	mkdir -p ./build/deps
 	mkdir -p ./build/tmp
 	# XXX TODO: https or digest verification on this file...
@@ -85,7 +85,7 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	rm -rf ./build/tmp/emscripten
 
 .PHONY: test-jit-backend
-test-jit-backend: ./build/deps/bin/python ./build/deps/lib/libgc.so
+test-jit-backend: ./build/deps/bin/python ./build/deps/lib/gc.h
 	cd ./deps/pypy/rpython/jit/backend/asmjs ; LD_LIBRARY_PATH="../../../../../../build/deps/lib" CC="gcc -m32 -I$(CURDIR)/build/deps/include -L$(CURDIR)/build/deps/lib" ../../../../../../build/deps/bin/python ../../../../pytest.py -vx
 
 
