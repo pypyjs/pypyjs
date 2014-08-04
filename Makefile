@@ -37,6 +37,18 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH emcc --version > /dev/null
 
 
+# Running the tests requires a local install of "libgc".
+./build/deps/lib/libgc.so:
+	mkdir -p ./build/deps
+	mkdir -p ./build/tmp
+	# XXX TODO: https or digest verification on this file...
+	wget -O ./build/tmp/gc-7.2f.tar.gz http://www.hboehm.info/gc/gc_source/gc-7.2f.tar.gz
+	cd ./build/tmp ; tar -xzvf gc-7.2f.tar.gz
+	cd ./build/tmp/gc-7.2 ; ./configure --prefix=$(CURDIR)/build/deps CC="gcc -m32"
+	cd ./build/tmp/gc-7.2 ; make
+	cd ./build/tmp/gc-7.2 ; make install
+
+
 # Since emscripten is a 32-bit target platform, we have to build pypy
 # using a 32-bit python or it gets very confused.  This fetches and 
 # builds an appropriate version from source.
@@ -71,6 +83,10 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	cd ./build/tmp/emscripten ; make -j 2
 	cd ./build/tmp/emscripten ; make install
 	rm -rf ./build/tmp/emscripten
+
+.PHONY: test-jit-backend
+test-jit-backend: ./build/deps/bin/python ./build/deps/lib/libgc.so
+	cd ./deps/pypy/rpython/jit/backend/asmjs ; LD_LIBRARY_PATH="../../../../../../build/deps/lib" ../../../../../../build/deps/bin/python ../../../../pytest.py --platform=emscripten -v
 
 
 # Cleanout any non-essential build cruft.
