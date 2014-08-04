@@ -86,7 +86,7 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 
 .PHONY: test-jit-backend
 test-jit-backend: ./build/deps/bin/python ./build/deps/lib/gc.h
-	cd ./deps/pypy/rpython/jit/backend/asmjs ; LD_LIBRARY_PATH="../../../../../../build/deps/lib" CC="gcc -m32 -I$(CURDIR)/build/deps/include -L$(CURDIR)/build/deps/lib" ../../../../../../build/deps/bin/python ../../../../pytest.py -vx
+	cd ./deps/pypy/rpython/jit/backend/asmjs ; LD_LIBRARY_PATH="../../../../../../build/deps/lib" CC="gcc -m32 -I$(CURDIR)/deps/pypy/rpython/translator/platform/emscripten_platform -I$(CURDIR)/build/deps/include -L$(CURDIR)/build/deps/lib" ../../../../../../build/deps/bin/python ../../../../pytest.py -vx
 
 
 # Cleanout any non-essential build cruft.
