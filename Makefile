@@ -21,14 +21,10 @@ all: ./build/pypy.vm.js
 	CC="emcc -g2 -s ASSERTIONS=1" PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
-# This builds a bundle of the stdlib filesystem for easy inclusion.
-./build/stdlib.js:
-	python ./deps/emscripten/tools/file_packager.py ./build/stdlib.data --js-output=./build/stdlib.js --preload ./deps/pypy/lib-python@lib/pypyjs/lib-python --preload ./deps/pypy/lib_pypy/@lib/pypyjs/lib_pypy --no-heap-copy --exclude *.wav --exclude *.pyc
-
-
 
 # For convenience we build local copies of the more fiddly bits
 # of our compilation toolchain.
+
 .PHONY: deps
 deps:	./build/deps/bin/pypy ./build/deps/bin/clang
 	# Check that nodejs is available.
