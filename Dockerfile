@@ -6,7 +6,7 @@ ENV LANG C.UTF-8
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -y
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
+RUN DEBIAN_FRONTEND=noninteractive \ apt-get install -y \
     ca-certificates \
     curl \
     build-essential \
@@ -15,7 +15,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     wget \
     groff-base \
     python-minimal \
-    multiarch-support
+    multiarch-support \
+    && apt-get clean
 
 RUN dpkg --add-architecture i386
 

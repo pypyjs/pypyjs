@@ -117,7 +117,7 @@ deps:	./build/deps/bin/pypy ./build/deps/bin/clang ./build/deps/bin/node ./build
 
 ./build/deps/bin/activate:
 	mkdir -p ./build/deps/bin
-	echo 'PATH="$$$(CURDIR)/build/deps/bin:$$PATH"' > ./build/deps/bin/activate
+	echo 'PATH="$(CURDIR)/build/deps/bin:$$PATH"' > ./build/deps/bin/activate
 	echo 'export PATH' >> ./build/deps/bin/activate
 	echo 'export LD_LIBRARY_PATH="$(CURDIR)/build/deps/lib"' >> ./build/deps/bin/activate
 	echo 'export CFLAGS="-m32 -I$(CURDIR)/build/deps/include -I$(CURDIR)/build/deps/lib/libffi-3.1/include"' >> ./build/deps/bin/activate
