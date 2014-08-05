@@ -15,6 +15,7 @@ developer niceties:
 
   * docker
       * minimal curses
+      * no-implicit-function-declarations
 
 
 SOON:

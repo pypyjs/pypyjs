@@ -49,3 +49,10 @@ You can also run the testsuite like this::
     $> make test-jit-backend
 
 
+If you'd like to hack on PyPyJS, the following background reading will
+be helpful:
+
+  * http://pypy.readthedocs.org/en/latest/translation.html
+  * http://pypy.readthedocs.org/en/latest/coding-guide.html
+
+
