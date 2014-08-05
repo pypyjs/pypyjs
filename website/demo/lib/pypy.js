@@ -136,6 +136,9 @@ function PyPyJS(opts) {
           initializedReject(err);
         }
       }
+      if(!memoryInitializer) {
+        dependenciesFulfilled();
+      }
   
       return initializedP.then((function() {
         // Continue with processing the downloaded module metadata.
