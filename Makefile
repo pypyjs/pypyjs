@@ -23,6 +23,13 @@ all: ./build/pypy.vm.js
 	CC="emcc -g2 -s ASSERTIONS=1" PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
+# This builds a smaller test program.
+./build/rematcher.js: deps
+	CC="emcc -I $(CURDIR)/deps/pypy/rpython/translator/platform/emscripten_platform/nodebug" PATH=$(CURDIR)/build/deps/bin:$(CURDIR)/deps/emscripten:$$PATH EMSCRIPTEN=$(CURDIR)/deps/emscripten LLVM=$(CURDIR)/build/deps/bin PYTHON=$(CURDIR)/deps/bin/python ./build/deps/bin/pypy ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/rematcher.js ./tools/rematcher.py
+	# XXX TODO: build separate memory initializer.
+	# XXX TODO: use closure compiler on the shell code.
+
+
 
 # For convenience we build local copies of the more fiddly bits
 # of our compilation toolchain.

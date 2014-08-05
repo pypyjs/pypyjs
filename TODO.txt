@@ -13,6 +13,9 @@ developer niceties:
       * brew install bdw-gc with universal build "--universal"
       * also libffi?
 
+  * docker
+      * minimal curses
+
 
 SOON:
 
