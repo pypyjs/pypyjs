@@ -1,22 +1,8 @@
 
 developer niceties:
 
-  * a docker or similar with all the deps pre-built?
-
-  * simple commands for running the appropriate testsuites
-    with all dependencies etc configured
-
   * high-level intro to the various modules, where they live
     and what they do
-
-  * docker
-      * actually upload the dockerfile
-      * don't use my personal github config for the build
-      * resolv.conf issues?
-
-  * take a dependency on PyV8
-      * I had to hack the makefile to pretend I was 32-bit
-        (around the bit that calls os.uname())
 
 
 SOON:

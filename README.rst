@@ -15,23 +15,24 @@ of a github clone of the upstream PyPy repository:
 
     https://github.com/rfk/pypy
 
-You can get all the necessary code by checking out this repository and doing::
+You can get all the necessary code from within this top-level repository
+by accessing it as a git submodule::
 
     $> git submodule init
     $> git submodule update
 
-Building it requires a 32-bit python environment and the emscripten-enabled
-LLVM toolchain.  The makefile can build these automatically for you::
+Building pypyjs requires a 32-bit python environment and the emscripten-enabled
+LLVM toolchain.  The recommended way to build is using the pre-built docker
+image containing these dependencies::
 
-    $> make deps
-    $> source ./build/deps/bin/activate
+    $> docker pull rfkelly/pypyjs-build
 
-Be warned, this will take a *long* time.  Once it's done you can build
-the pypy.vm.js javascript file with::
+The Makefile knows how to use this image during the build::
+like so::
 
     $> make
 
-Again, this will take a *long* time.  It will eventually produce the file
+Be prepared, this will take a *long* time.  It will eventually produce the file
 `./build/pypy.vm.js` containing the code for the interpreter.  Take a look in
 the `./website/demo` directory for an example of how to distribute and use
 this file.
