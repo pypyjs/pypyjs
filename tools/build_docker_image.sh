@@ -74,6 +74,9 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	git clone https://github.com/kripken/emscripten /build/emscripten;
 	git clone https://github.com/kripken/emscripten-fastcomp /build/emscripten-fastcomp
 	git clone https://github.com/kripken/emscripten-fastcomp-clang /build/emscripten-fastcomp/tools/clang
+	cd /build/emscripten ; git checkout -t origin/incoming
+	cd /build/emscripten-fastcomp ; git checkout -t origin/incoming
+	cd /build/emscripten-fastcomp/tools/clang ; git checkout -t origin/incoming
 	# Build the emscripten-enabled clang toolchain.
 	mkdir -p /tmp/emscripten
 	cd /tmp/emscripten ; /build/emscripten-fastcomp/configure --enable-optimized --disable-assertions --enable-targets=host,js --prefix=/usr
