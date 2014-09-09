@@ -82,9 +82,6 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	cd /tmp/emscripten ; /build/emscripten-fastcomp/configure --enable-optimized --disable-assertions --enable-targets=host,js --prefix=/usr
 	cd /tmp/emscripten ; make -j 4
 	cd /tmp/emscripten ; make install
-	# Workaround for https://github.com/kripken/emscripten/issues/2734
-	cd /build/emscripten/src; grep -v "console.log(' ')" postamble.js > postamble.js.new; mv postamble.js.new postamble.js
-	cd /build/emscripten/src; grep -v "console.log(' ')" compiler.js > compiler.js.new; mv compiler.js.new compiler.js
 	# Symlink emcc into system path.
 	ln -s /build/emscripten/emcc /usr/bin/emcc
 	# Initialize .emscripten config file.
