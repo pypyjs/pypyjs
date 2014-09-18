@@ -30,7 +30,7 @@ all: ./build/pypy.vm.js
 # directory, with write access to the current directory.  These variables
 # can be changed if you want to use a custom build environment.
 
-DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -v /etc/passwd:/etc/passwd -w $(CURDIR) -u $(USER) rfkelly/pypyjs-build
+DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -v /etc/passwd:/etc/passwd -u $(USER) -w $(CURDIR) rfkelly/pypyjs-build
 EMCC = $(DOCKER) emcc
 PYTHON = $(DOCKER) python
 PYPY = $(DOCKER) pypy
@@ -43,7 +43,7 @@ PYPY = $(DOCKER) pypy
 ./build/pypy.vm.js:
 	mkdir -p build
 	# XXX TODO: a nice way to disable the debugging/traceback info?
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --gcrootfinder=optzshadowstack --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: build separate memory initializer.
 	# XXX TODO: use closure compiler on the shell code.
 
