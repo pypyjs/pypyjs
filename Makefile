@@ -27,10 +27,25 @@
 all: ./build/pypy.vm.js
 
 # This runs the dockerized build commands as if they were in the current
-# directory, with write access to the current directory.  These variables
-# can be changed if you want to use a custom build environment.
+# directory, with write access to the current directory.  For linux we
+# can mount /etc/passwd and actually run as the current user.  For OSX
+# we run as root, assuming the curdir is under /Users, and hence that
+# boot2docker will automagically share it with appropriate permissions.
+#
+# Change these variables if you want to use a custom build environment.
 
-DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -v /etc/passwd:/etc/passwd -u $(USER) -w $(CURDIR) rfkelly/pypyjs-build
+DOCKER_IMAGE = rfkelly/pypyjs-build
+ifeq ($(shell uname -s),Linux)
+    # For linux, we can mount /etc/passwd and actually run as the current
+    # user, making permissions work nicely on created build artifacts.
+    DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -v /etc/passwd:/etc/passwd -u $(USER) -w $(CURDIR) $(DOCKER_IMAGE)
+else
+    # For OSX (and maybe others) we run as the default docker user, assume
+    # that the current directory is somewhere boot2docker can automagically
+    # mount it, and hence build artifacts will get sensible permissions.
+    DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -w $(CURDIR) $(DOCKER_IMAGE)
+endif
+
 EMCC = $(DOCKER) emcc
 PYTHON = $(DOCKER) python
 PYPY = $(DOCKER) pypy
