@@ -45,13 +45,12 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 
 /usr/bin/node:
-	# XXX TODO: verify the download
-	wget -O tmp/node-v0.10.30.tar.gz http://nodejs.org/dist/v0.10.30/node-v0.10.30.tar.gz
-	cd /tmp ; tar -xzvf node-v0.10.30.tar.gz
-	cd /tmp/node-v0.10.30 ; ./configure  --prefix=/usr
-	cd /tmp/node-v0.10.30 ; make
-	cd /tmp/node-v0.10.30 ; make install
-	rm -rf /tmp/node-v0.10.30*
+	wget -O /tmp/node-v0.10.33.tar.gz https://nodejs.org/dist/v0.10.33/node-v0.10.33.tar.gz
+	cd /tmp ; tar -xzvf node-v0.10.33.tar.gz
+	cd /tmp/node-v0.10.33 ; ./configure  --prefix=/usr
+	cd /tmp/node-v0.10.33 ; make
+	cd /tmp/node-v0.10.33 ; make install
+	rm -rf /tmp/node-v0.10.33*
 
 
 /usr/bin/pypy:
