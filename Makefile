@@ -58,7 +58,7 @@ PYPY = $(DOCKER) pypy
 ./build/pypy.vm.js:
 	mkdir -p build
 	# XXX TODO: a nice way to disable the debugging/traceback info?
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --gcrootfinder=optzshadowstack --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: build separate memory initializer.
 	# XXX TODO: use closure compiler on the shell code.
 
