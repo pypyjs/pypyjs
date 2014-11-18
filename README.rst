@@ -28,7 +28,6 @@ image containing these dependencies::
     $> docker pull rfkelly/pypyjs-build
 
 The Makefile knows how to use this image during the build::
-like so::
 
     $> make
 
