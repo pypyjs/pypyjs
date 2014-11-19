@@ -85,6 +85,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	ln -s /build/emscripten/emcc /usr/bin/emcc
 	# Initialize .emscripten config file.
 	emcc --version > /dev/null
+	emcc --clear-cache > /dev/null
 	# Remove any of the build and vc data that we no longer need.
 	rm -rf /tmp/emscripten
 	rm -rf /build/emscripten-fastcomp
