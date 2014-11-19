@@ -34,17 +34,16 @@ all: ./build/pypy.vm.js
 #
 # Change these variables if you want to use a custom build environment.
 
-DOCKER_IMAGE = rfkelly/pypyjs-build
 ifeq ($(shell uname -s),Linux)
     # For linux, we can mount /etc/passwd and actually run as the current
     # user, making permissions work nicely on created build artifacts.
-    DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -v /etc/passwd:/etc/passwd -u $(USER) -w $(CURDIR) $(DOCKER_IMAGE)
-else
-    # For OSX (and maybe others) we run as the default docker user, assume
+    # For other platforms we just run as the default docker user, assume
     # that the current directory is somewhere boot2docker can automagically
     # mount it, and hence build artifacts will get sensible permissions.
-    DOCKER = docker run -ti --rm -v $(CURDIR):$(CURDIR) -w $(CURDIR) $(DOCKER_IMAGE)
+    DOCKER_EXTRA_ARGS = -v /etc/passwd:/etc/passwd -u $(USER)
 endif
+
+DOCKER = docker run -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" $(DOCKER_EXTRA_ARGS) rfkelly/pypyjs-build
 
 EMCC = $(DOCKER) emcc
 PYTHON = $(DOCKER) python
@@ -57,7 +56,6 @@ PYPY = $(DOCKER) pypy
 
 ./build/pypy.vm.js:
 	mkdir -p build
-	# XXX TODO: a nice way to disable the debugging/traceback info?
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: build separate memory initializer.
 	# XXX TODO: use closure compiler on the shell code.
@@ -68,8 +66,7 @@ PYPY = $(DOCKER) pypy
 
 ./build/pypy-debug.vm.js:
 	mkdir -p build
-	# XXX TODO: pass "-g2 -s ASSERTIONS=1" as build flags somehow
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	export LDFLAGS="$$LDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
 # This builds a smaller test program.
