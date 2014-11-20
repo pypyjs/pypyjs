@@ -4,13 +4,13 @@
 #
 # The pypyjs build environment is very particular - it requires a 32-bit
 # linux system with several pre-installed libraries and header files.
-# This script boostraps a 32-bit debian chroot, installs the necessary
-# dependencies, and stores the result as a docker image.
+# This script starts from a 32-bit base environment, installs the necessary
+# build and test tools, and stores the result as a docker image.
 #
 # Pre-requisites:
 #
 #    * docker, and a running docker daemon
-#    * deboostrap, and running as root so it will work correctly
+#    * a built "rfkelly/linux32" base image
 #
 
 set -e
@@ -23,22 +23,11 @@ trap "rm -rf $BUILD_DIR" EXIT
 
 docker ps >/dev/null
 
-# Create a bare-bones 32-bit debian chroot.
+# Write out a Makefile for building all the things.
+# This makes it easy to do them in one hit, rather than having each
+# build step add another layer to the final dockerfile.
 
-CHROOT_DIR="$BUILD_DIR/chroot"
-debootstrap --arch i386 wheezy $CHROOT_DIR http://http.debian.net/debian/
-
-# It needs a couple of 64-bit libs in it to allow docker to work correctly.
-# XXX TODO: will they always be in these locations?
-
-mkdir $CHROOT_DIR/lib64
-cp /usr/lib/libpthread.so.0 $CHROOT_DIR/lib64
-cp /lib/libc.so.6 $CHROOT_DIR/lib64
-cp /lib64/ld-linux-x86-64.so.2 $CHROOT_DIR/lib64
-
-# Write out a Makefile for building custom parts of the environment
-
-cat > $CHROOT_DIR/Makefile << END_MAKEFILE
+cat > $BUILD_DIR/Makefile << END_MAKEFILE
 
 .PHONY: all
 all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg /usr/bin/node /usr/bin/emcc /usr/bin/pypy
@@ -60,7 +49,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# Ensure we're using up-to-date code.
 	cd /build/pypy; git pull; git gc --aggressive
 	# Build it, and link it into system path.
-	python /build/pypy/rpython/bin/rpython --opt=jit --gcrootfinder=shadowstack --cc="gcc -m32" --output=/build/pypy/pypy-c ./build/pypy/pypy/goal/targetpypystandalone.py --translationmodules
+	python /build/pypy/rpython/bin/rpython --opt=jit --gcrootfinder=shadowstack --cc="gcc -m32" --output=/build/pypy/pypy-c /build/pypy/pypy/goal/targetpypystandalone.py --translationmodules
 	ln -s /build/pypy/pypy-c /usr/bin/pypy
 	# Remove any build and vc files that we don't need at runtime.
 	rm -rf /tmp/usession-* /tmp/ctypes_configure-*
@@ -93,7 +82,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 
 /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg:
-	svn checkout http://pyv8.googlecode.com/svn/trunk/ /build/pyv8
+	svn checkout https://pyv8.googlecode.com/svn/trunk/ /build/pyv8
 	cd /build/pyv8; cat setup.py | sed "s/if os.uname/if False and os.uname/g" > setup.py.new; mv setup.py.new setup.py
 	cd /build/pyv8; python setup.py build
 	cd /build/pyv8; python setup.py install
@@ -102,46 +91,22 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 END_MAKEFILE
 
-# Import it into a base docker image
-
-BASE_IMAGE_ID=`tar -cf - -C $CHROOT_DIR . | docker import -`
-rm -rf $CHROOT_DIR
-
 # Use docker to chroot into it and complete the setup.
 
-docker build --no-cache --tag="rfkelly/pypyjs-build" - << END_DOCKERFILE
+cat > $BUILD_DIR/Dockerfile << END_DOCKERFILE
 
-FROM $BASE_IMAGE_ID
+FROM rfkelly/linux32
 
 MAINTAINER Ryan Kelly <ryan@rfk.id.au>
 
 ENV LANG C.UTF-8
-ENV EM_CACHE /tmp
+ENV EM_CACHE /tmp/emscripten_cache
 
-# Install various (32-bit) build dependencies.
+ADD Makefile /build/Makefile
 
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update -y \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        build-essential \
-        subversion \
-        git-core \
-        vim \
-        wget \
-        libffi-dev \
-        libgc-dev \
-        libncurses-dev \
-        libz-dev \
-        python-dev \
-        python-setuptools \
-        libboost-system-dev \
-        libboost-thread-dev \
-        libboost-python-dev \
-    && apt-get clean
-
-# Build the custom dependencies.
-
-RUN make all
+RUN make -C /build all
 
 END_DOCKERFILE
+
+docker build --no-cache --tag="rfkelly/pypyjs-build" $BUILD_DIR
+
