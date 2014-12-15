@@ -66,7 +66,7 @@ PYPY = $(DOCKER) pypy
 
 ./build/pypy:
 	mkdir -p build
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=c --cc="clang -m32" --opt=jit --gcrootfinder=shadowstack --translation-backendopt-remove_asserts --output=./build/pypy ./deps/pypy/pypy/goal/targetpypystandalone.py --withoutmod-bz2
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=c --cc="clang -m32" --opt=jit --gcrootfinder=shadowstack --translation-backendopt-remove_asserts --output=./build/pypy ./deps/pypy/pypy/goal/targetpypystandalone.py --withoutmod-bz2 --withoutmod-_rawffi --withoutmod-cpyext
 
 
 # This builds a debugging-friendly version that is bigger but has e.g. 
