@@ -61,6 +61,14 @@ PYPY = $(DOCKER) pypy
 	# XXX TODO: use closure compiler on the shell code.
 
 
+# This builds a similarly-configured native pypy executable.
+# It's useful for doing performance comparisons etc.
+
+./build/pypy:
+	mkdir -p build
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=c --cc="clang -m32" --opt=jit --gcrootfinder=shadowstack --translation-backendopt-remove_asserts --output=./build/pypy ./deps/pypy/pypy/goal/targetpypystandalone.py --withoutmod-bz2
+
+
 # This builds a debugging-friendly version that is bigger but has e.g. 
 # more asserts and better traceback information.
 
@@ -82,7 +90,7 @@ shell:
 	$(DOCKER) /bin/bash
 
 
-# Convenience target for running the tests.
+# Convenience targets for running the tests.
 
 .PHONY: test-jit-backend
 test-jit-backend:
