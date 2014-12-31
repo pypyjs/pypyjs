@@ -77,6 +77,16 @@ PYPY = $(DOCKER) pypy
 	export LDFLAGS="$$LDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
+# This builds a version of pypy.js without its JIT, which is useful for
+# investigating the size or performance of the core interpreter.
+
+./build/pypy-nojit.vm.js:
+	mkdir -p build
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	# XXX TODO: build separate memory initializer.
+	# XXX TODO: use closure compiler on the shell code.
+
+
 # This builds a smaller test program.
 
 ./build/rematcher.js:
