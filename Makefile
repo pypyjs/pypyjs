@@ -24,7 +24,7 @@
 #
 
 .PHONY: all
-all: ./build/pypy.vm.js
+all: lib
 
 # This runs the dockerized build commands as if they were in the current
 # directory, with write access to the current directory.  For linux we
@@ -50,6 +50,12 @@ PYTHON = $(DOCKER) python
 PYPY = $(DOCKER) pypy
 
 
+.PHONY: lib
+lib: ./build/pypy.vm.js
+	cp ./build/pypy.vm.js ./lib/pypy.vm.js
+	python ./tools/extract_memory_initializer.py ./lib/pypy.vm.js
+
+
 # This is the necessary incantation to build the PyPy js backend
 # in "release mode", optimized for deployment to the web.  It trades
 # off some debuggability in exchange for reduced code size.
@@ -57,7 +63,6 @@ PYPY = $(DOCKER) pypy
 ./build/pypy.vm.js:
 	mkdir -p build
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
-	# XXX TODO: build separate memory initializer.
 	# XXX TODO: use closure compiler on the shell code.
 
 
@@ -82,8 +87,7 @@ PYPY = $(DOCKER) pypy
 
 ./build/pypy-nojit.vm.js:
 	mkdir -p build
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
-	# XXX TODO: build separate memory initializer.
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy-nojit.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 	# XXX TODO: use closure compiler on the shell code.
 
 
