@@ -14,7 +14,7 @@ MARKER_START_FUNCS = "// EMSCRIPTEN_START_FUNCS"
 MARKER_END_FUNCS = "// EMSCRIPTEN_END_FUNCS"
 
 
-def cromulate(fileobj, opts):
+def cromulate(fileobj, opts, on_progress=None):
     # Split out the code for each individual function.
     # We don't have to actually *parse* it, just chunk it up.
     # XXX TODO: read incrementally to reduce memory usage.
@@ -62,6 +62,7 @@ def cromulate(fileobj, opts):
     # While we have functions left to append, pick the one that gives
     # the best compression either at head of tail of the deque.
     # XXX TODO: consider several funcs from head/tail when choosing?
+    on_progress(0, len(functions))
     while pending:
         # Find the best pending function.
         best_score = float("inf")
@@ -90,6 +91,8 @@ def cromulate(fileobj, opts):
         if seen < len(functions):
             pending.add(seen)
             seen += 1
+        if on_progress is not None:
+            on_progress(len(reordered_functions), len(functions))
 
     # Add the leading whitespace to ensure overall bytelength stays constant.
     reordered_functions.appendleft(functions[0])
@@ -107,6 +110,14 @@ def cromulate(fileobj, opts):
     ))
 
 
+def print_percent_complete(done, total):
+    """Display simple textual progress indicator on stdout."""
+    perc = 100.0 * done / total
+    status = "\rCromulated {:d} of {:d} functions ({:.1f}%)"
+    sys.stdout.write(status.format(done, total, perc))
+    sys.stdout.flush()
+
+
 def main(args=None):
     usage = "usage: %prog [options] [file ...]"
     descr = "Improve compressibility of emscripten-generated javascript"
@@ -119,16 +130,25 @@ def main(args=None):
                       help="zlib compress level used when comparing functions")
     parser.add_option("-c", "--stdout", action="store_true",
                       help="write output to stdout")
+    parser.add_option("-q", "--quiet", action="store_true",
+                      help="supress printing of progress messages")
 
     opts, files = parser.parse_args(args)
     if not files:
         files = [sys.stdin]
         opts.stdout = True
+        opts.quiet = True
     else:
         files = [open(f, "r") for f in files]
 
+    on_progress = None
+    if not opts.quiet:
+        on_progress = print_percent_complete
+
     for f in files:
-        output = cromulate(f, opts)
+        output = cromulate(f, opts, on_progress)
+        if not opts.quiet:
+            sys.stdout.write("\n")
         # XXX TODO: if we wanted to get really fancy, we could calculate
         # the expected saving of the new ordering and then pass it through
         # the cromulation again, iterating until we fail to improve the
@@ -138,7 +158,8 @@ def main(args=None):
             sys.stdout.write(output)
         else:
             dirnm = os.path.dirname(f.name)
-            fd, tempnm = tempfile.mkstemp(dir=dirnm, prefix=f.name)
+            filenm = os.path.basename(f.name)
+            fd, tempnm = tempfile.mkstemp(dir=dirnm, prefix=filenm)
             try:
                 os.write(fd, output)
                 os.close(fd)
