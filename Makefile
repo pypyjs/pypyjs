@@ -84,7 +84,7 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
 	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
-	#python ./tools/cromulate.py $(RELDIR)/lib/pypy.vm.js
+	python ./tools/cromulate.py $(RELDIR)/lib/pypy.vm.js
 	# Copy the supporting JS library code.
 	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js $(RELDIR)/lib/
 	python tools/module_bundler.py init $(RELDIR)/lib/modules/
