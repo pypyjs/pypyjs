@@ -3,9 +3,7 @@
 #
 # Note that the pypyjs build environment is very particular - emscripten
 # produces 32-bit code, so pypy must be translated using a 32-bit python
-# interpreter with various 32-bit support libraries.  This Makefile can
-# build *some* of them automatically, but you will almost certainly want
-# to run it from a 32-bit linux environment.
+# interpreter with various 32-bit support libraries.
 #
 # The recommended approach is to use the pre-built docker image for the
 # build environment, available via:
@@ -24,15 +22,18 @@
 #
 
 .PHONY: all
-all: lib
+all: ./build/pypy.js.tar.gz
+
 
 # This runs the dockerized build commands as if they were in the current
 # directory, with write access to the current directory.  For linux we
 # can mount /etc/passwd and actually run as the current user.  For OSX
 # we run as root, assuming the curdir is under /Users, and hence that
 # boot2docker will automagically share it with appropriate permissions.
-#
-# Change these variables if you want to use a custom build environment.
+
+DOCKER_IMAGE = rfkelly/pypyjs-build
+
+DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS"
 
 ifeq ($(shell uname -s),Linux)
     # For linux, we can mount /etc/passwd and actually run as the current
@@ -40,20 +41,41 @@ ifeq ($(shell uname -s),Linux)
     # For other platforms we just run as the default docker user, assume
     # that the current directory is somewhere boot2docker can automagically
     # mount it, and hence build artifacts will get sensible permissions.
-    DOCKER_EXTRA_ARGS = -v /etc/passwd:/etc/passwd -u $(USER)
+    DOCKER_ARGS += -v /etc/passwd:/etc/passwd -u $(USER)
 endif
 
-DOCKER = docker run -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" $(DOCKER_EXTRA_ARGS) rfkelly/pypyjs-build
+DOCKER = docker run $(DOCKER_ARGS) $(DOCKER_IMAGE)
+
+# Change these variables if you want to use a custom build environment.
+# They must point to the emscripten compiler, a 32-bit python executable
+# and a 32-bit pypy executable.
 
 EMCC = $(DOCKER) emcc
 PYTHON = $(DOCKER) python
 PYPY = $(DOCKER) pypy
 
 
-.PHONY: lib
-lib: ./build/pypy.vm.js
-	cp ./build/pypy.vm.js ./lib/pypy.vm.js
-	python ./tools/extract_memory_initializer.py ./lib/pypy.vm.js
+# Top-level target to build a release bundle.
+# This makes a tarball containing the compiled pypy interpreter, supporting
+# javascript code, and the python stdlib modules and tooling.
+
+./build/%.js.tar.gz: ./build/%.vm.js
+	mkdir -p build/$*.js/lib
+	# Copy the compiled VM and massage it into the expected shape.
+	cp ./build/$*.vm.js ./build/$*.js/lib/pypy.vm.js
+	python ./tools/extract_memory_initializer.py ./build/$*.js/lib/pypy.vm.js
+	python ./tools/cromulate.py ./build/$*.js/lib/pypy.vm.js
+	# Copy the supporting JS library code.
+	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js ./build/$*.js/lib/
+	python tools/bundle_modules.py  ./build/$*.js/lib/modules/
+	# Copy tools for managing the distribution.
+	# XXX TODO: needs a distribution-suitable README
+	mkdir -p build/$*.js/tools
+	cp ./tools/bundle_modules.py ./build/$*.js/tools/
+	cp ./package.json ./build/$*.js/package.json
+	# Tar it up, and we're done.
+	cd ./build && tar -czf $*.js.tar.gz $*.js
+	rm -rf ./build/$*.js
 
 
 # This is the necessary incantation to build the PyPy js backend
@@ -63,15 +85,6 @@ lib: ./build/pypy.vm.js
 ./build/pypy.vm.js:
 	mkdir -p build
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
-	# XXX TODO: use closure compiler on the shell code.
-
-
-# This builds a similarly-configured native pypy executable.
-# It's useful for doing performance comparisons etc.
-
-./build/pypy:
-	mkdir -p build
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=c --cc="clang -m32" --opt=jit --gcrootfinder=shadowstack --translation-backendopt-remove_asserts --output=./build/pypy ./deps/pypy/pypy/goal/targetpypystandalone.py --withoutmod-bz2 --withoutmod-_rawffi --withoutmod-cpyext
 
 
 # This builds a debugging-friendly version that is bigger but has e.g. 
@@ -88,7 +101,6 @@ lib: ./build/pypy.vm.js
 ./build/pypy-nojit.vm.js:
 	mkdir -p build
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy-nojit.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
-	# XXX TODO: use closure compiler on the shell code.
 
 
 # This builds a smaller test program.
