@@ -71,9 +71,11 @@ VERSION = 0.2.0
 .PHONY: release
 release: ./build/pypy.js-$(VERSION).tar.gz
 
-.PHONY: release-%
-release-%: ./build/pypy-%.js-$(VERSION).tar.gz
-	true
+.PHONY: release-nojit
+release-nojit: ./build/pypy-nojit.js-$(VERSION).tar.gz
+
+.PHONY: release-debug
+release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 
 ./build/%.js-$(VERSION).tar.gz: RELNAME = $*.js-$(VERSION)
 ./build/%.js-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
@@ -82,7 +84,7 @@ release-%: ./build/pypy-%.js-$(VERSION).tar.gz
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
 	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
-	python ./tools/cromulate.py $(RELDIR)/lib/pypy.vm.js
+	#python ./tools/cromulate.py $(RELDIR)/lib/pypy.vm.js
 	# Copy the supporting JS library code.
 	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js $(RELDIR)/lib/
 	python tools/module_bundler.py init $(RELDIR)/lib/modules/
