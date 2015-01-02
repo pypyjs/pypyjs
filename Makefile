@@ -71,6 +71,10 @@ VERSION = 0.2.0
 .PHONY: release
 release: ./build/pypy.js-$(VERSION).tar.gz
 
+.PHONY: release-%
+release-%: ./build/pypy-%.js-$(VERSION).tar.gz
+	true
+
 ./build/%.js-$(VERSION).tar.gz: RELNAME = $*.js-$(VERSION)
 ./build/%.js-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
 ./build/%.js-$(VERSION).tar.gz: ./build/%.vm.js

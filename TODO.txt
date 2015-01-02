@@ -1,6 +1,8 @@
 
-developer niceties:
+ * flesh out dist bundle readme
+ * add high-level "interact" method for fun nodejs demo
 
+developer niceties:
   * high-level intro to the various modules, where they live
     and what they do
 
