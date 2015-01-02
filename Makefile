@@ -21,9 +21,6 @@
 # You can tweak the makefile variables below to point to such an environment.
 #
 
-.PHONY: all
-all: ./build/pypy.js.tar.gz
-
 
 # This runs the dockerized build commands as if they were in the current
 # directory, with write access to the current directory.  For linux we
@@ -55,27 +52,45 @@ PYTHON = $(DOCKER) python
 PYPY = $(DOCKER) pypy
 
 
-# Top-level target to build a release bundle.
-# This makes a tarball containing the compiled pypy interpreter, supporting
-# javascript code, and the python stdlib modules and tooling.
+# The default target puts a built interpreter locally in ./lib.
 
-./build/%.js.tar.gz: ./build/%.vm.js
-	mkdir -p build/$*.js/lib
+.PHONY: lib
+lib: ./lib/pypy.vm.js
+
+./lib/pypy.vm.js: ./build/pypy.vm.js
+	cp ./build/pypy.vm.js ./lib/
+	python ./tools/extract_memory_initializer.py ./lib/pypy.vm.js
+	rm -rf ./lib/modules/
+	python tools/module_bundler.py init ./lib/modules/
+
+# This makes a releasable tarball containing the compiled pypy interpreter,
+# supporting javascript code, and the python stdlib modules and tooling.
+
+VERSION = 0.2.0
+
+.PHONY: release
+release: ./build/pypy.js-$(VERSION).tar.gz
+
+./build/%.js-$(VERSION).tar.gz: RELNAME = $*.js-$(VERSION)
+./build/%.js-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
+./build/%.js-$(VERSION).tar.gz: ./build/%.vm.js
+	mkdir -p $(RELDIR)/lib
 	# Copy the compiled VM and massage it into the expected shape.
-	cp ./build/$*.vm.js ./build/$*.js/lib/pypy.vm.js
-	python ./tools/extract_memory_initializer.py ./build/$*.js/lib/pypy.vm.js
-	python ./tools/cromulate.py ./build/$*.js/lib/pypy.vm.js
+	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
+	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
+	python ./tools/cromulate.py $(RELDIR)/lib/pypy.vm.js
 	# Copy the supporting JS library code.
-	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js ./build/$*.js/lib/
-	python tools/bundle_modules.py  ./build/$*.js/lib/modules/
+	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js $(RELDIR)/lib/
+	python tools/module_bundler.py init $(RELDIR)/lib/modules/
 	# Copy tools for managing the distribution.
-	# XXX TODO: needs a distribution-suitable README
-	mkdir -p build/$*.js/tools
-	cp ./tools/bundle_modules.py ./build/$*.js/tools/
-	cp ./package.json ./build/$*.js/package.json
+	mkdir -p $(RELDIR)/tools
+	cp ./tools/module_bundler.py $(RELDIR)/tools/
+	# Copy release distribution metadata.
+	cp ./package.json $(RELDIR)/package.json
+	cp ./README.dist.rst $(RELDIR)/README.rst
 	# Tar it up, and we're done.
-	cd ./build && tar -czf $*.js.tar.gz $*.js
-	rm -rf ./build/$*.js
+	cd ./build && tar -czf $(RELNAME).tar.gz $(RELNAME)
+	rm -rf $(RELDIR)
 
 
 # This is the necessary incantation to build the PyPy js backend

@@ -7,9 +7,6 @@ developer niceties:
 
 SOON:
 
- * manually extract the memory initializer and put it somewhere we
-   can load it easily.
-
  * get all the testcases passing again
 
  * name the memory file after a hash of its contents, to avoid

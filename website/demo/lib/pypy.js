@@ -18,13 +18,59 @@ if (typeof module !== "undefined") {
   }
 }
 
-// Ensure we have reference to a 'Promise' constructor.
-if (typeof Promise === "undefined") {
-  if (typeof require === "function") {
-    var Promise = require("./Promise.min.js");
-  } else if (typeof window.Promise !== "undefined") {
-    var Promise = window.Promise;
+
+// Generic debugging printf.
+var debug = function(){};
+if (typeof console !== "undefined") {
+  debug = console.log;
+} else if (typeof print !== "undefined") {
+  debug = print
+}
+
+
+// Find the directory containing this very file.
+// It can be quite difficult depending on execution environment...
+if (typeof __dirname === "undefined") {
+  var __dirname = "./";
+  // A little hackery to find the URL of this very file.
+  // Throw an error, then parse the stack trace looking for filenames.
+  var errlines = (new Error()).stack.split("\n");
+  for (var i = 0; i < errlines.length; i++) {
+    var match = /(at |@)(.+\/)pypy.js/.exec(errlines[i]);
+    if (match) {
+      __dirname = match[2];
+      break;
+    }
   }
+}
+if (__dirname.charAt(__dirname.length - 1) !== "/") {
+  __dirname += "/";
+} 
+
+
+// Ensure we have reference to a 'Promise' constructor.
+var Promise;
+if (typeof Promise === "undefined") {
+  if (this && typeof this.Promise !== "undefined") {
+    Promise = this.Promise;
+  } else if (typeof require === "function") {
+    Promise = require("./Promise.min.js");
+  } else if (typeof load === "function") {
+    load(__dirname + "Promise.min.js");
+    if (typeof Promise === "undefined") {
+      if (this && typeof this.Promise !== "undefined") {
+        Promise = this.Promise;
+      }
+    }
+  } else if (typeof window !== "undefined") {
+    if (typeof window.Promise !== "undefined") {
+      var Promise = window.Promise;
+    }
+  }
+}
+
+if (typeof Promise === "undefined") {
+  throw "Promise object not found";
 }
 
 // Some extra goodies for nodejs.
@@ -54,6 +100,9 @@ function PyPyJS(opts) {
     if (typeof process.stderr !== "undefined") {
       this.stderr = function(x) { process.stderr.write(x); }
     }
+  } else if (typeof print !== "undefined") {
+      this.stdout = function(x) { print(x); }
+      this.stderr = function(x) { print(x); }
   }
 
   opts = opts || {};
@@ -66,24 +115,7 @@ function PyPyJS(opts) {
 
   // Default to finding files relative to this very file.
   if (!this.rootURL && !PyPyJS.rootURL) {
-    if (typeof __dirname !== "undefined") {
-      PyPyJS.rootURL = __dirname;
-    } else {
-      PyPyJS.rootURL = "./";
-      // A little hackery to find the URL of this very file.
-      // Throw an error, then parse the stack trace looking for filenames.
-      var errlines = (new Error()).stack.split("\n");
-      for (var i = 0; i < errlines.length; i++) {
-        var match = /(https?:\/\/.+\/)pypy.js/.exec(errlines[i]);
-        if (match) {
-          PyPyJS.rootURL = match[1];
-          break;
-        }
-      }
-    }
-    if (PyPyJS.rootURL.charAt(PyPyJS.rootURL.length - 1) !== "/") {
-      PyPyJS.rootURL += "/";
-    } 
+    PyPyJS.rootURL = __dirname;
   }
   if (this.rootURL && this.rootURL.charAt(this.rootURL.length - 1) !== "/") {
     this.rootURL += "/";
@@ -105,6 +137,9 @@ function PyPyJS(opts) {
       Module.thisProgram = "/lib/pypyjs/pypy.js";
       Module.filePackagePrefixURL = this.rootURL || PyPyJS.rootURL;
       Module.memoryInitializerPrefixURL = this.rootURL || PyPyJS.rootURL;
+      Module.locateFile = function(name) {
+        return (this.rootURL || PyPyJS.rootURL) + name;
+      }
 
       // Don't start or stop the program, just set it up.
       // We'll call the API functions ourself.
@@ -136,9 +171,9 @@ function PyPyJS(opts) {
       }).bind(this);
  
       // Begin fetching the metadata for available python modules.
-      //  With luck these can download while we jank around compiling
-      //  all of tha javascript.
-      //  XXX TODO: also load memory initializer this way.
+      // With luck these can download while we jank around compiling
+      // all of that javascript.
+      // XXX TODO: also load memory initializer this way.
       var moduleDataP = this.fetch("modules/index.json");
 
       // Eval the code.  This will probably take quite a while in Firefox
@@ -150,7 +185,8 @@ function PyPyJS(opts) {
       // We will use its methods to execute code in the VM.
       this._module = Module;
 
-      // And some functions that are not exported by default.
+      // And some functions that are not exported by default, but
+      // which appear in our scope thanks to the above eval().
       this._emjs_make_handle = _emjs_make_handle;
       this._emjs_free = _emjs_free;
 
@@ -188,18 +224,18 @@ function PyPyJS(opts) {
       return initializedP.then((function() {
         // Continue with processing the downloaded module metadata.
         return moduleDataP.then((function(xhr) {
-          // Store the module index, and load any eager ones.
+          // Store the module index, and load any preload modules.
           var modIndex = JSON.parse(xhr.responseText);
           this._allModules = modIndex.modules;
-          if (modIndex.eager) {
-            for (var name in modIndex.eager) {
-              this._writeModuleFile(name, modIndex.eager[name]);
+          if (modIndex.preload) {
+            for (var name in modIndex.preload) {
+              this._writeModuleFile(name, modIndex.preload[name]);
             }
           }
         }).bind(this));
       }).bind(this))
     }).bind(this))
-    .then(resolve, function(err){ reject(err) });
+    .then(resolve, function(err){ debug("ERROR: " + err); reject(err) });
   }).bind(this));
 
 };
@@ -209,15 +245,8 @@ function PyPyJS(opts) {
 // that treats paths as relative to the pypy.js root url.
 //
 PyPyJS.prototype.fetch = function fetch(relpath, responseType) {
-  if (typeof XMLHttpRequest === "undefined") {
-    return new Promise((function(resolve, reject) {
-      var rootURL = this.rootURL || PyPyJS.rootURL;
-      fs.readFile(path.join(rootURL, relpath), function(err, data) {
-        if (err) return reject(err);
-        resolve({ responseText: data.toString() });
-      });
-    }).bind(this));
-  } else {
+  // For the web, use XMLHttpRequest.
+  if (typeof XMLHttpRequest !== "undefined") {
     return new Promise((function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       xhr.onload = function() {
@@ -233,6 +262,35 @@ PyPyJS.prototype.fetch = function fetch(relpath, responseType) {
       xhr.send(null);
     }).bind(this));
   }
+  // For nodejs, use fs.readFile.
+  if (typeof fs !== "undefined" && typeof fs.readFile !== "undefined") {
+    return new Promise((function(resolve, reject) {
+      var rootURL = this.rootURL || PyPyJS.rootURL;
+      fs.readFile(path.join(rootURL, relpath), function(err, data) {
+        if (err) return reject(err);
+        resolve({ responseText: data.toString() });
+      });
+    }).bind(this));
+  }
+  // For spidermonkey, use snarf (which has a binary read mode).
+  if (typeof snarf !== "undefined") {
+    return new Promise((function(resolve, reject) {
+      var rootURL = this.rootURL || PyPyJS.rootURL;
+      var data = snarf(rootURL + relpath);
+      resolve({ responseText: data });
+    }).bind(this));
+  }
+  // For d8, use read() and readbuffer().
+  if (typeof read !== "undefined" && typeof readbuffer !== "undefined") {
+    return new Promise((function(resolve, reject) {
+      var rootURL = this.rootURL || PyPyJS.rootURL;
+      var data = read(rootURL + relpath);
+      resolve({ responseText: data });
+    }).bind(this));
+  }
+  return new Promise(function(resolve, reject) {
+    reject("unable to fetch files");
+  });
 };
 
 
