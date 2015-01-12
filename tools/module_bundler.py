@@ -19,10 +19,11 @@
 #
 
 import os
+import re
 import sys
 import ast
 import json
-import shutil
+import codecs
 import argparse
 
 
@@ -401,8 +402,8 @@ class ModuleBundle(object):
             moddata = {"file": relpath}
             self.modules[modname] = moddata
             # Copy its source file across.
-            shutil.copyfile(os.path.join(rootdir, relpath),
-                            os.path.join(self.bundle_dir, relpath))
+            self._copy_py_file(os.path.join(rootdir, relpath),
+                               os.path.join(self.bundle_dir, relpath))
             # We'll need to analyse its imports once all siblings are gathered.
             self._modules_pending_import_analysis.append(modname)
 
@@ -421,7 +422,8 @@ class ModuleBundle(object):
         if not self.is_excluded(subpackage):
             # Note it as an available package.
             self.modules[subpackage] = {"dir": relpath}
-            os.makedirs(os.path.join(self.bundle_dir, relpath))
+            if not os.path.isdir(os.path.join(self.bundle_dir, relpath)):
+                os.makedirs(os.path.join(self.bundle_dir, relpath))
             # Include it in post-gathering analysis.
             self._modules_pending_import_analysis.append(subpackage)
             # Recursively gather all its contents.
@@ -435,6 +437,43 @@ class ModuleBundle(object):
                         self._gather_package(subpackage, rootdir, subrelpath)
                 elif nm.endswith(".py"):
                     self._gather_module(subpackage, rootdir, subrelpath)
+
+    def _copy_py_file(self, srcpath, dstpath):
+        """Copy a python source file into the bundle.
+
+        This method copes the contents of a python source file into the bundle.
+        Since browsers usually expect strings in utf-8 format, it will try to
+        detect source files in other encodings and transparently convert them
+        to utf-8.
+        """
+        # XXX TODO: copy in chunks, like shutil would do?
+        with open(srcpath, "rb") as f_src:
+            data = f_src.read()
+        # Look for the encoding marker in the first two lines of the file.
+        lines = data.split("\n", 2)
+        encoding = None
+        for i in xrange(2):
+            if i >= len(lines):
+                break
+            if lines[i].startswith("#"):
+                match = re.search(r"coding[:=]\s*([-\w.]+)", lines[i])
+                if match is not None:
+                    encoding = match.group(1)
+                    try:
+                        codecs.lookup(encoding)
+                    except LookupError:
+                        encoding = None
+                    break
+        # Write normalized data to output file.
+        with open(dstpath, "wb") as f_dst:
+            if encoding is None:
+                f_dst.write(data)
+            else:
+                for j in xrange(i):
+                    f_dst.write(lines[j])
+                f_dst.write(lines[i].replace(encoding, "utf-8"))
+                for j in xrange(i + 1, len(lines)):
+                    f_dst.write(lines[j].decode(encoding).encode("utf8"))
 
     def _perform_pending_import_analysis(self):
         """Perform import analysis on any pending modules.
