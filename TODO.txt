@@ -33,6 +33,14 @@ improve the jitted code:
    * maybe send relevant funcs into the jitted code via plt?
 
 
+* almost all JIT overhead is spent in support.jitRecompile() - up to several seconds in many cases!
+   * this is dominated by a handful of large functions that generate
+     "compiled slowly" warnings under odinmonkey.
+   * we need the equivalent of the outliner:
+      * separately-compiled helper functions, e.g. guard failure helpers
+      * split inner loops into their own functions
+
+
 EVENTUALLY:
 
 * pypy thinks we have st_atim, when we don't
