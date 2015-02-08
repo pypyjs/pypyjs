@@ -410,7 +410,7 @@ class ModuleBundle(object):
             modname = package + "." + modname
         if not self.is_excluded(modname):
             # Add it to the list of available modules.
-            moddata = {"file": relpath}
+            moddata = {"file": relpath.replace("\\", "/")}
             self.modules[modname] = moddata
             # Copy its source file across.
             self._copy_py_file(os.path.join(rootdir, relpath),
@@ -432,7 +432,7 @@ class ModuleBundle(object):
             subpackage = package + "." + subpackage
         if not self.is_excluded(subpackage):
             # Note it as an available package.
-            self.modules[subpackage] = {"dir": relpath}
+            self.modules[subpackage] = {"dir": relpath.replace("\\", "/")}
             if not os.path.isdir(os.path.join(self.bundle_dir, relpath)):
                 os.makedirs(os.path.join(self.bundle_dir, relpath))
             # Include it in post-gathering analysis.
