@@ -289,20 +289,31 @@ class ModuleBundle(object):
 
     def flush_index(self):
         """Write out the index file based on in-memory state."""
+        # Use shutil.copy instead of os.rename on windows
+        if sys.platform.startswith("win32"):
+            import shutil
         # Atomically update the index file.
         with open(self.index_file + ".new", "w") as f:
             json.dump({
                 "modules": self.modules,
                 "preload": self.preload,
             }, f, indent=2, sort_keys=True)
-        os.rename(self.index_file + ".new", self.index_file)
+        if sys.platform.startswith("win32"):
+            shutil.copy(self.index_file + ".new", self.index_file)
+            os.remove(self.index_file + ".new")
+        else:
+            os.rename(self.index_file + ".new", self.index_file)
         # Atomically update the meta file.
         with open(self.meta_file + ".new", "w") as f:
             json.dump({
                 "exclude": self.exclude,
                 "missing": self.missing,
             }, f, indent=2, sort_keys=True)
-        os.rename(self.meta_file + ".new", self.meta_file)
+        if sys.platform.startswith("win32"):
+            shutil.copy(self.meta_file + ".new", self.meta_file)
+            os.remove(self.meta_file + ".new")
+        else:
+            os.rename(self.meta_file + ".new", self.meta_file)
         # Remove preloaded module files from disk, now that their contents
         # are safely flushed to the index file.
         for name in self.preload:
