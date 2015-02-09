@@ -25,6 +25,7 @@ import ast
 import json
 import codecs
 import argparse
+import shutil
 
 
 # The root of our pypy source checkout, if it exists.
@@ -289,9 +290,6 @@ class ModuleBundle(object):
 
     def flush_index(self):
         """Write out the index file based on in-memory state."""
-        # Use shutil.copy instead of os.rename on windows
-        if sys.platform.startswith("win32"):
-            import shutil
         # Atomically update the index file.
         with open(self.index_file + ".new", "w") as f:
             json.dump({
