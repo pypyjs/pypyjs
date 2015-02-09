@@ -3,4 +3,5 @@ The following authors have make contributions to this project, and agree to
 make their contributions available under the terms of the project license:
 
 * Ryan Kelly <ryan@rfk.id.au>
+* Ian Meikle
 
