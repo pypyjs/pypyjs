@@ -1,6 +1,4 @@
-# -*- coding: iso-8859-1 -*-
-"""A lexical analyzer class for simple shell-like syntaxes."""
-
+# -*- coding: utf-8 -*-"""A lexical analyzer class for simple shell-like syntaxes."""
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 # Input stacking and error message cleanup added by ESR, March 2000
 # push_source() and pop_source() made explicit by ESR, January 2001.
@@ -38,8 +36,8 @@ class shlex:
         self.wordchars = ('abcdfeghijklmnopqrstuvwxyz'
                           'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
         if self.posix:
-            self.wordchars += ('ßàáâãäåæçèéêëìíîïğñòóôõöøùúûüışÿ'
-                               'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖØÙÚÛÜİŞ')
+            self.wordchars += ('ÃŸÃ Ã¡Ã¢Ã£Ã¤Ã¥Ã¦Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã°Ã±Ã²Ã³Ã´ÃµÃ¶Ã¸Ã¹ÃºÃ»Ã¼Ã½Ã¾Ã¿'
+                               'Ã€ÃÃ‚ÃƒÃ„Ã…Ã†Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃÃÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã˜Ã™ÃšÃ›ÃœÃÃ')
         self.whitespace = ' \t\r\n'
         self.whitespace_split = False
         self.quotes = '\'"'

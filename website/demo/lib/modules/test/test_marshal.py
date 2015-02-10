@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
+#!/usr/bin/env python# -*- coding: utf-8 -*-
 from test import test_support
 import marshal
 import sys
@@ -90,15 +88,15 @@ class FloatTestCase(unittest.TestCase, HelperMixin):
 
 class StringTestCase(unittest.TestCase, HelperMixin):
     def test_unicode(self):
-        for s in [u"", u"Andrè Previn", u"abc", u" "*10000]:
+        for s in [u"", u"AndrÃ¨ Previn", u"abc", u" "*10000]:
             self.helper(s)
 
     def test_string(self):
-        for s in ["", "Andrè Previn", "abc", " "*10000]:
+        for s in ["", "AndrÃ¨ Previn", "abc", " "*10000]:
             self.helper(s)
 
     def test_buffer(self):
-        for s in ["", "Andrè Previn", "abc", " "*10000]:
+        for s in ["", "AndrÃ¨ Previn", "abc", " "*10000]:
             with test_support.check_py3k_warnings(("buffer.. not supported",
                                                      DeprecationWarning)):
                 b = buffer(s)
@@ -123,7 +121,7 @@ class ContainerTestCase(unittest.TestCase, HelperMixin):
          'alist': ['.zyx.41'],
          'atuple': ('.zyx.41',)*10,
          'aboolean': False,
-         'aunicode': u"Andrè Previn"
+         'aunicode': u"AndrÃ¨ Previn"
          }
     def test_dict(self):
         self.helper(self.d)

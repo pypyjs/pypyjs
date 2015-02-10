@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: latin-1 -*-
-"""Generate Python documentation in HTML or text for interactive use.
+#!/usr/bin/env python# -*- coding: utf-8 -*-"""Generate Python documentation in HTML or text for interactive use.
 
 In the Python interpreter, do "from pydoc import help" to provide online
 help.  Calling help(thing) on a Python object documents the object.

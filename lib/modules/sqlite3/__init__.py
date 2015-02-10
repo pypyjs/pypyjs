@@ -1,7 +1,5 @@
-#-*- coding: ISO-8859-1 -*-
-# pysqlite2/__init__.py: the pysqlite2 package.
-#
-# Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+#-*- coding: utf-8 -*-# pysqlite2/__init__.py: the pysqlite2 package.#
+# Copyright (C) 2005 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #

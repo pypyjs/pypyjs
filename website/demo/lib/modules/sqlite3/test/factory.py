@@ -1,7 +1,5 @@
-#-*- coding: ISO-8859-1 -*-
-# pysqlite2/test/factory.py: tests for the various factories in pysqlite
-#
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+#-*- coding: utf-8 -*-# pysqlite2/test/factory.py: tests for the various factories in pysqlite#
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -159,27 +157,27 @@ class TextFactoryTests(unittest.TestCase):
         self.con = sqlite.connect(":memory:")
 
     def CheckUnicode(self):
-        austria = unicode("Österreich", "latin1")
+        austria = unicode("Ã–sterreich", "latin1")
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertTrue(type(row[0]) == unicode, "type of row[0] must be unicode")
 
     def CheckString(self):
         self.con.text_factory = str
-        austria = unicode("Österreich", "latin1")
+        austria = unicode("Ã–sterreich", "latin1")
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertTrue(type(row[0]) == str, "type of row[0] must be str")
         self.assertTrue(row[0] == austria.encode("utf-8"), "column must equal original data in UTF-8")
 
     def CheckCustom(self):
         self.con.text_factory = lambda x: unicode(x, "utf-8", "ignore")
-        austria = unicode("Österreich", "latin1")
+        austria = unicode("Ã–sterreich", "latin1")
         row = self.con.execute("select ?", (austria.encode("latin1"),)).fetchone()
         self.assertTrue(type(row[0]) == unicode, "type of row[0] must be unicode")
         self.assertTrue(row[0].endswith(u"reich"), "column must contain original data")
 
     def CheckOptimizedUnicode(self):
         self.con.text_factory = sqlite.OptimizedUnicode
-        austria = unicode("Österreich", "latin1")
+        austria = unicode("Ã–sterreich", "latin1")
         germany = unicode("Deutchland")
         a_row = self.con.execute("select ?", (austria,)).fetchone()
         d_row = self.con.execute("select ?", (germany,)).fetchone()
@@ -219,10 +217,10 @@ class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
         # Non-ASCII -> unicode argument
         self.con.text_factory = sqlite.OptimizedUnicode
         self.con.execute("delete from test")
-        self.con.execute("insert into test (value) values (?)", (u'ä\0ö',))
+        self.con.execute("insert into test (value) values (?)", (u'Ã¤\0Ã¶',))
         row = self.con.execute("select value from test").fetchone()
         self.assertIs(type(row[0]), unicode)
-        self.assertEqual(row[0], u"ä\x00ö")
+        self.assertEqual(row[0], u"Ã¤\x00Ã¶")
 
     def tearDown(self):
         self.con.close()

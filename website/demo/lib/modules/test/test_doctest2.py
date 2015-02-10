@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-u"""A module to test whether doctest recognizes some 2.2 features,
-like static and class methods.
+# -*- coding: utf-8 -*-u"""A module to test whether doctest recognizes some 2.2 features,like static and class methods.
 
 >>> print 'yup'  # 1
 yup

@@ -1,7 +1,5 @@
-#-*- coding: ISO-8859-1 -*-
-# pysqlite2/test/hooks.py: tests for various SQLite-specific hooks
-#
-# Copyright (C) 2006-2007 Gerhard H‰ring <gh@ghaering.de>
+#-*- coding: utf-8 -*-# pysqlite2/test/hooks.py: tests for various SQLite-specific hooks#
+# Copyright (C) 2006-2007 Gerhard H√§ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -42,7 +40,7 @@ class CollationTests(unittest.TestCase):
     def CheckCreateCollationNotAscii(self):
         con = sqlite.connect(":memory:")
         try:
-            con.create_collation("coll‰", cmp)
+            con.create_collation("coll√§", cmp)
             self.fail("should have raised a ProgrammingError")
         except sqlite.ProgrammingError, e:
             pass

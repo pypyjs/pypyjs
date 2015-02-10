@@ -230,7 +230,7 @@ function PyPyJS(opts) {
 
       // Ensure that some functions are available on the Module,
       // for linking with jitted code.
-      if (!Module._jitInvoke) {
+      if (!Module._jitInvoke && typeof _jitInvoke !== "undefined") {
         Module._jitInvoke = _jitInvoke;
       }
 

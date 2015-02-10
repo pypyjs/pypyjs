@@ -1,6 +1,4 @@
-# -*- coding: iso-8859-15 -*-
-
-import sys
+# -*- coding: utf-8 -*-import sys
 import os
 import shutil
 import StringIO
@@ -529,7 +527,7 @@ class MemberReadTest(ReadTest):
         self._test_member(tarinfo, size=86016, chksum=md5_sparse)
 
     def test_find_umlauts(self):
-        tarinfo = self.tar.getmember("ustar/umlauts-ÄÖÜäöüß")
+        tarinfo = self.tar.getmember("ustar/umlauts-Ã„Ã–ÃœÃ¤Ã¶Ã¼ÃŸ")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
 
     def test_find_ustar_longname(self):
@@ -542,7 +540,7 @@ class MemberReadTest(ReadTest):
 
     def test_find_pax_umlauts(self):
         self.tar = tarfile.open(self.tarname, mode=self.mode, encoding="iso8859-1")
-        tarinfo = self.tar.getmember("pax/umlauts-ÄÖÜäöüß")
+        tarinfo = self.tar.getmember("pax/umlauts-Ã„Ã–ÃœÃ¤Ã¶Ã¼ÃŸ")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
         self.tar.close()
 
@@ -611,17 +609,17 @@ class PaxReadTest(LongnameTest):
         tarinfo = tar.getmember("pax/regtype1")
         self.assertEqual(tarinfo.uname, "foo")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"Ã„Ã–ÃœÃ¤Ã¶Ã¼ÃŸ")
 
         tarinfo = tar.getmember("pax/regtype2")
         self.assertEqual(tarinfo.uname, "")
         self.assertEqual(tarinfo.gname, "bar")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"Ã„Ã–ÃœÃ¤Ã¶Ã¼ÃŸ")
 
         tarinfo = tar.getmember("pax/regtype3")
         self.assertEqual(tarinfo.uname, "tarfile")
         self.assertEqual(tarinfo.gname, "tarfile")
-        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"ÄÖÜäöüß")
+        self.assertEqual(tarinfo.pax_headers.get("VENDOR.umlauts"), u"Ã„Ã–ÃœÃ¤Ã¶Ã¼ÃŸ")
 
     def test_pax_number_fields(self):
         # All following number fields are read from the pax header.
@@ -1170,8 +1168,8 @@ class PaxWriteTest(GNUWriteTest):
                 u"foo": u"bar",
                 u"uid": u"0",
                 u"mtime": u"1.23",
-                u"test": u"äöü",
-                u"äöü": u"test"}
+                u"test": u"Ã¤Ã¶Ã¼",
+                u"Ã¤Ã¶Ã¼": u"test"}
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
                 pax_headers=pax_headers)
@@ -1201,7 +1199,7 @@ class PaxWriteTest(GNUWriteTest):
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT, encoding="iso8859-1")
         t = tarfile.TarInfo()
-        t.name = u"äöü"     # non-ASCII
+        t.name = u"Ã¤Ã¶Ã¼"     # non-ASCII
         t.uid = 8**8        # too large
         t.pax_headers = pax_headers
         tar.addfile(t)
@@ -1231,7 +1229,7 @@ class UstarUnicodeTest(unittest.TestCase):
 
     def _test_unicode_filename(self, encoding):
         tar = tarfile.open(tmpname, "w", format=self.format, encoding=encoding, errors="strict")
-        name = u"äöü"
+        name = u"Ã¤Ã¶Ã¼"
         tar.addfile(tarfile.TarInfo(name))
         tar.close()
 
@@ -1244,17 +1242,17 @@ class UstarUnicodeTest(unittest.TestCase):
         tar = tarfile.open(tmpname, "w", format=self.format, encoding="ascii", errors="strict")
         tarinfo = tarfile.TarInfo()
 
-        tarinfo.name = "äöü"
+        tarinfo.name = "Ã¤Ã¶Ã¼"
         if self.format == tarfile.PAX_FORMAT:
             self.assertRaises(UnicodeError, tar.addfile, tarinfo)
         else:
             tar.addfile(tarinfo)
 
-        tarinfo.name = u"äöü"
+        tarinfo.name = u"Ã¤Ã¶Ã¼"
         self.assertRaises(UnicodeError, tar.addfile, tarinfo)
 
         tarinfo.name = "foo"
-        tarinfo.uname = u"äöü"
+        tarinfo.uname = u"Ã¤Ã¶Ã¼"
         self.assertRaises(UnicodeError, tar.addfile, tarinfo)
         tar.close()
 
@@ -1268,7 +1266,7 @@ class UstarUnicodeTest(unittest.TestCase):
         tar.close()
 
     def test_uname_unicode(self):
-        for name in (u"äöü", "äöü"):
+        for name in (u"Ã¤Ã¶Ã¼", "Ã¤Ã¶Ã¼"):
             t = tarfile.TarInfo("foo")
             t.uname = name
             t.gname = name
@@ -1281,8 +1279,8 @@ class UstarUnicodeTest(unittest.TestCase):
 
             tar = tarfile.open("foo.tar", fileobj=fobj, encoding="iso8859-1")
             t = tar.getmember("foo")
-            self.assertEqual(t.uname, "äöü")
-            self.assertEqual(t.gname, "äöü")
+            self.assertEqual(t.uname, "Ã¤Ã¶Ã¼")
+            self.assertEqual(t.gname, "Ã¤Ã¶Ã¼")
 
 
 class GNUUnicodeTest(UstarUnicodeTest):
@@ -1304,9 +1302,9 @@ class PaxUnicodeTest(UstarUnicodeTest):
     def test_error_handlers(self):
         # Test if the unicode error handlers work correctly for characters
         # that cannot be expressed in a given encoding.
-        self._create_unicode_name(u"äöü")
+        self._create_unicode_name(u"Ã¤Ã¶Ã¼")
 
-        for handler, name in (("utf-8", u"äöü".encode("utf8")),
+        for handler, name in (("utf-8", u"Ã¤Ã¶Ã¼".encode("utf8")),
                     ("replace", "???"), ("ignore", "")):
             tar = tarfile.open(tmpname, format=self.format, encoding="ascii",
                     errors=handler)
@@ -1319,11 +1317,11 @@ class PaxUnicodeTest(UstarUnicodeTest):
     def test_error_handler_utf8(self):
         # Create a pathname that has one component representable using
         # iso8859-1 and the other only in iso8859-15.
-        self._create_unicode_name(u"äöü/¤")
+        self._create_unicode_name(u"Ã¤Ã¶Ã¼/â‚¬")
 
         tar = tarfile.open(tmpname, format=self.format, encoding="iso8859-1",
                 errors="utf-8")
-        self.assertEqual(tar.getnames()[0], "äöü/" + u"¤".encode("utf8"))
+        self.assertEqual(tar.getnames()[0], "Ã¤Ã¶Ã¼/" + u"â‚¬".encode("utf8"))
         tar.close()
 
 

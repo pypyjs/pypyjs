@@ -1,19 +1,17 @@
-#!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
-
+#!/usr/bin/env python# -*- coding: utf-8 -*-
 # Note that PyPy contains also a built-in module 'sha' which will hide
 # this one if compiled in.
 
 """A sample implementation of SHA-1 in pure Python.
 
    Framework adapted from Dinu Gherman's MD5 implementation by
-   J. Hallén and L. Creighton. SHA-1 implementation based directly on
+   J. HallÃ©n and L. Creighton. SHA-1 implementation based directly on
    the text of the NIST standard FIPS PUB 180-1.
 """
 
 
 __date__    = '2004-11-17'
-__version__ = 0.91 # Modernised by J. Hallén and L. Creighton for Pypy
+__version__ = 0.91 # Modernised by J. HallÃ©n and L. Creighton for Pypy
 
 
 import struct, copy

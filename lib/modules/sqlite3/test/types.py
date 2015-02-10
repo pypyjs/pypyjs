@@ -1,7 +1,5 @@
-#-*- coding: ISO-8859-1 -*-
-# pysqlite2/test/types.py: tests for type conversion and detection
-#
-# Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
+#-*- coding: utf-8 -*-# pysqlite2/test/types.py: tests for type conversion and detection#
+# Copyright (C) 2005-2007 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #
@@ -41,10 +39,10 @@ class SqliteTypeTests(unittest.TestCase):
         self.con.close()
 
     def CheckString(self):
-        self.cur.execute("insert into test(s) values (?)", (u"Österreich",))
+        self.cur.execute("insert into test(s) values (?)", (u"Ã–sterreich",))
         self.cur.execute("select s from test")
         row = self.cur.fetchone()
-        self.assertEqual(row[0], u"Österreich")
+        self.assertEqual(row[0], u"Ã–sterreich")
 
     def CheckSmallInt(self):
         self.cur.execute("insert into test(i) values (?)", (42,))
@@ -74,9 +72,9 @@ class SqliteTypeTests(unittest.TestCase):
         self.assertEqual(row[0], val)
 
     def CheckUnicodeExecute(self):
-        self.cur.execute(u"select 'Österreich'")
+        self.cur.execute(u"select 'Ã–sterreich'")
         row = self.cur.fetchone()
-        self.assertEqual(row[0], u"Österreich")
+        self.assertEqual(row[0], u"Ã–sterreich")
 
     def CheckNonUtf8_Default(self):
         try:

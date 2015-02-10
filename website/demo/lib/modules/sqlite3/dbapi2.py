@@ -1,7 +1,5 @@
-# -*- coding: iso-8859-1 -*-
-# pysqlite2/dbapi2.py: the DB-API 2.0 interface
-#
-# Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
+# -*- coding: utf-8 -*-# pysqlite2/dbapi2.py: the DB-API 2.0 interface#
+# Copyright (C) 2004-2005 Gerhard HÃ¤ring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
 #

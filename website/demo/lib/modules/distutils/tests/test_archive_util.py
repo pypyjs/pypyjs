@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-"""Tests for distutils.archive_util."""
-__revision__ = "$Id$"
+# -*- coding: utf-8 -*-"""Tests for distutils.archive_util."""__revision__ = "$Id$"
 
 import unittest
 import os

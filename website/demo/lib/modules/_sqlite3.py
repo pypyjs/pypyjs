@@ -1,6 +1,4 @@
-#-*- coding: utf-8 -*-
-# pysqlite2/dbapi.py: pysqlite DB-API module
-#
+#-*- coding: utf-8 -*-# pysqlite2/dbapi.py: pysqlite DB-API module#
 # Copyright (C) 2007-2008 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.

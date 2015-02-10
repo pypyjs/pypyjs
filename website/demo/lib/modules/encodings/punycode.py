@@ -1,7 +1,5 @@
-# -*- coding: iso-8859-1 -*-
-""" Codec for the Punicode encoding, as specified in RFC 3492
-
-Written by Martin v. Löwis.
+# -*- coding: utf-8 -*-""" Codec for the Punicode encoding, as specified in RFC 3492
+Written by Martin v. LÃ¶wis.
 """
 
 import codecs
