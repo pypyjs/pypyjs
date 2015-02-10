@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-"""Doctest for method/function calls.
+# -*- coding: utf-8 -*-
+
+"""Doctest for method/function calls.
 
 We're going the use these types for extra testing
 

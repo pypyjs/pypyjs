@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-# Copyright (C) 2001,2002 Python Software Foundation# csv package unit tests
+# -*- coding: utf-8 -*-
+# Copyright (C) 2001,2002 Python Software Foundation
+# csv package unit tests
 
 import sys
 import os

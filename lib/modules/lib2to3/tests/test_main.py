@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-import sysimport codecs
+# -*- coding: utf-8 -*-
+import sys
+import codecs
 import logging
 import os
 import re

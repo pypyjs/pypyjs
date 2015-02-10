@@ -480,9 +480,13 @@ class ModuleBundle(object):
             else:
                 for j in xrange(i):
                     f_dst.write(lines[j])
+                    f_dst.write("\n")
                 f_dst.write(lines[i].replace(encoding, "utf-8"))
+                f_dst.write("\n")
                 for j in xrange(i + 1, len(lines)):
                     f_dst.write(lines[j].decode(encoding).encode("utf8"))
+                    if j < len(lines) - 1:
+                        f_dst.write("\n")
 
     def _perform_pending_import_analysis(self):
         """Perform import analysis on any pending modules.

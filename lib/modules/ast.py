@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-"""    ast
+# -*- coding: utf-8 -*-
+"""
+    ast
     ~~~
 
     The `ast` module helps Python applications to process trees of the Python

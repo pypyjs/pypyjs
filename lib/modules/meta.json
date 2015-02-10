@@ -115,6 +115,9 @@
     "_emx_link.link": [
       "os"
     ], 
+    "_heapq.*": [
+      "heapq"
+    ], 
     "_hotshot": [
       "test.test_hotshot"
     ], 
@@ -338,6 +341,7 @@
       "asyncore", 
       "CGIHTTPServer", 
       "logging.config", 
+      "pydoc", 
       "SocketServer", 
       "telnetlib", 
       "test.test_ssl", 

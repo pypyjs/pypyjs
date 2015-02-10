@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-import unittest
+# -*- coding: utf-8 -*-
+
+import unittest
 from test import test_support
 
 class PEP263Test(unittest.TestCase):

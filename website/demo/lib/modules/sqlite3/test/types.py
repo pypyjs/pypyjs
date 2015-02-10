@@ -1,4 +1,6 @@
-#-*- coding: utf-8 -*-# pysqlite2/test/types.py: tests for type conversion and detection#
+#-*- coding: utf-8 -*-
+# pysqlite2/test/types.py: tests for type conversion and detection
+#
 # Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.

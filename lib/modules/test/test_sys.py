@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-import unittest, test.test_supportimport sys, os, cStringIO
+# -*- coding: utf-8 -*-
+import unittest, test.test_support
+import sys, os, cStringIO
 import struct
 import operator
 

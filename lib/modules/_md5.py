@@ -1,4 +1,6 @@
-#!/usr/bin/env python# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 # Note that PyPy contains also a built-in module 'md5' which will hide
 # this one if compiled in.
 

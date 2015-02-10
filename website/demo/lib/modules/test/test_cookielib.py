@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-"""Tests for cookielib.py."""
+# -*- coding: utf-8 -*-
+"""Tests for cookielib.py."""
+
 import cookielib
 import os
 import re

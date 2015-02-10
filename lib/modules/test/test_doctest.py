@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-"""Test script for doctest.
+# -*- coding: utf-8 -*-
+"""
+Test script for doctest.
 """
 
 import sys

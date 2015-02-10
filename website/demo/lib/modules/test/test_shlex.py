@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-import unittestimport shlex
+# -*- coding: utf-8 -*-
+import unittest
+import shlex
 
 from test import test_support
 

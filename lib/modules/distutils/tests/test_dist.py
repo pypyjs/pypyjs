@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-"""Tests for distutils.dist."""
+# -*- coding: utf-8 -*-
+
+"""Tests for distutils.dist."""
 import os
 import StringIO
 import sys

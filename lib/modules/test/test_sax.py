@@ -1,4 +1,6 @@
-# regression test for SAX 2.0            -*- coding: utf-8 -*-# $Id$
+# regression test for SAX 2.0            -*- coding: utf-8 -*-
+# $Id$
+
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
 try:

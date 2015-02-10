@@ -1,4 +1,6 @@
-# -*- encoding: utf-8 -*-"""Tests for distutils.command.upload."""import os
+# -*- encoding: utf-8 -*-
+"""Tests for distutils.command.upload."""
+import os
 import unittest
 from test.test_support import run_unittest
 

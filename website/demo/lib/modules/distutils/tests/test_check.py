@@ -1,4 +1,6 @@
-# -*- encoding: utf-8 -*-"""Tests for distutils.command.check."""import unittest
+# -*- encoding: utf-8 -*-
+"""Tests for distutils.command.check."""
+import unittest
 from test.test_support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS

@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-import sys
+# -*- coding: utf-8 -*-
+
+import sys
 import os
 import shutil
 import StringIO

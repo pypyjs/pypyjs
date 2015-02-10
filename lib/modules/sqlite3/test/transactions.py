@@ -1,4 +1,6 @@
-#-*- coding: utf-8 -*-# pysqlite2/test/transactions.py: tests transactions#
+#-*- coding: utf-8 -*-
+# pysqlite2/test/transactions.py: tests transactions
+#
 # Copyright (C) 2005-2007 Gerhard Häring <gh@ghaering.de>
 #
 # This file is part of pysqlite.
