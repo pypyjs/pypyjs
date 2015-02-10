@@ -34,12 +34,12 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 
 /usr/bin/node:
-	wget -O /tmp/node-v0.10.33.tar.gz https://nodejs.org/dist/v0.10.33/node-v0.10.33.tar.gz
-	cd /tmp ; tar -xzvf node-v0.10.33.tar.gz
-	cd /tmp/node-v0.10.33 ; ./configure  --prefix=/usr
-	cd /tmp/node-v0.10.33 ; make
-	cd /tmp/node-v0.10.33 ; make install
-	rm -rf /tmp/node-v0.10.33*
+	wget -O /tmp/node-v0.10.36.tar.gz https://nodejs.org/dist/v0.10.36/node-v0.10.36.tar.gz
+	cd /tmp ; tar -xzvf node-v0.10.36.tar.gz
+	cd /tmp/node-v0.10.36 ; ./configure  --prefix=/usr
+	cd /tmp/node-v0.10.36 ; make
+	cd /tmp/node-v0.10.36 ; make install
+	rm -rf /tmp/node-v0.10.36*
 
 
 /usr/bin/pypy:
