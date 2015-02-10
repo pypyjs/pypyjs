@@ -25,6 +25,7 @@ import ast
 import json
 import codecs
 import argparse
+import shutil
 
 
 # The root of our pypy source checkout, if it exists.
@@ -295,14 +296,22 @@ class ModuleBundle(object):
                 "modules": self.modules,
                 "preload": self.preload,
             }, f, indent=2, sort_keys=True)
-        os.rename(self.index_file + ".new", self.index_file)
+        if sys.platform.startswith("win32"):
+            shutil.copy(self.index_file + ".new", self.index_file)
+            os.remove(self.index_file + ".new")
+        else:
+            os.rename(self.index_file + ".new", self.index_file)
         # Atomically update the meta file.
         with open(self.meta_file + ".new", "w") as f:
             json.dump({
                 "exclude": self.exclude,
                 "missing": self.missing,
             }, f, indent=2, sort_keys=True)
-        os.rename(self.meta_file + ".new", self.meta_file)
+        if sys.platform.startswith("win32"):
+            shutil.copy(self.meta_file + ".new", self.meta_file)
+            os.remove(self.meta_file + ".new")
+        else:
+            os.rename(self.meta_file + ".new", self.meta_file)
         # Remove preloaded module files from disk, now that their contents
         # are safely flushed to the index file.
         for name in self.preload:
@@ -399,7 +408,7 @@ class ModuleBundle(object):
             modname = package + "." + modname
         if not self.is_excluded(modname):
             # Add it to the list of available modules.
-            moddata = {"file": relpath}
+            moddata = {"file": relpath.replace("\\", "/")}
             self.modules[modname] = moddata
             # Copy its source file across.
             self._copy_py_file(os.path.join(rootdir, relpath),
@@ -421,7 +430,7 @@ class ModuleBundle(object):
             subpackage = package + "." + subpackage
         if not self.is_excluded(subpackage):
             # Note it as an available package.
-            self.modules[subpackage] = {"dir": relpath}
+            self.modules[subpackage] = {"dir": relpath.replace("\\", "/")}
             if not os.path.isdir(os.path.join(self.bundle_dir, relpath)):
                 os.makedirs(os.path.join(self.bundle_dir, relpath))
             # Include it in post-gathering analysis.
