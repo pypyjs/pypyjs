@@ -58,6 +58,9 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 /usr/bin/emcc: /usr/bin/node
 	mkdir -p /build
+	mkdir -p /build
+	mkdir -p /var/cache/emscripten/cache
+	chmod -R 777 /var/cache/emscripten
 	# Fetch all the necessary repos.
 	git clone https://github.com/kripken/emscripten /build/emscripten;
 	git clone https://github.com/kripken/emscripten-fastcomp /build/emscripten-fastcomp
@@ -72,9 +75,16 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	cd /tmp/emscripten ; make install
 	# Symlink emcc into system path.
 	ln -s /build/emscripten/emcc /usr/bin/emcc
-	# Initialize .emscripten config file and pre-compiled environment.
+	# Initialize emscripten config file
+	echo "EMSCRIPTEN_ROOT = '/build/emscripten'" > /var/cache/emscripten/config
+	echo "LLVM_ROOT = '/usr/bin'" >> /var/cache/emscripten/config
+	echo "TEMP_DIR = '/tmp'" >> /var/cache/emscripten/config
+	echo "NODE_JS = '/usr/bin/node'" >> /var/cache/emscripten/config
+	echo "COMPILER_ENGINE = NODE_JS" >> /var/cache/emscripten/config
+	echo "JS_ENGINES = [NODE_JS]" >> /var/cache/emscripten/config
 	emcc --version > /dev/null
 	emcc --clear-cache > /dev/null
+	# Pre-compile common emscripten utilities
 	cd /build/emscripten && python embuilder.py build libc
 	cd /build/emscripten && python embuilder.py build native_optimizer
 	cd /build/emscripten && python embuilder.py build struct_info
@@ -103,7 +113,8 @@ FROM rfkelly/linux32
 MAINTAINER Ryan Kelly <ryan@rfk.id.au>
 
 ENV LANG C.UTF-8
-ENV EM_CACHE /tmp/emscripten_cache
+ENV EM_CACHE /var/cache/emscripten/cache
+ENV EM_CONFIG /var/cache/emscripten/config
 
 ADD Makefile /build/Makefile
 
