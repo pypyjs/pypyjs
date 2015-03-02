@@ -145,6 +145,17 @@ EXCLUDE_MODULES = [
 PRELOAD_MODULES = [
     "os",
     "code",
+    # Python has some magic to auto-load encodings when they're needed,
+    # which doesn't work right if they're not preloaded.
+    "encodings.ascii",
+    "encodings.hex_codec",
+    "encodings.base64_codec",
+    "encodings.latin_1",
+    "encodings.utf_8",
+    "encodings.utf_16",
+    "encodings.unicode_internal",
+    "encodings.unicode_escape",
+    "encodings.raw_unicode_escape",
 ]
 
 
