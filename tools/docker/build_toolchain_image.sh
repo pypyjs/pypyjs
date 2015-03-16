@@ -68,6 +68,9 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	cd /build/emscripten ; git checkout -t origin/incoming
 	cd /build/emscripten-fastcomp ; git checkout -t origin/incoming
 	cd /build/emscripten-fastcomp/tools/clang ; git checkout -t origin/incoming
+	# Hack around problem with missing netlink.h include.
+	grep -v "AF_NETLINK" /build/emscripten/system/include/libc/sys/socket.h > /tmp/socket.h.new
+	mv /tmp/socket.h.new /build/emscripten/system/include/libc/sys/socket.h
 	# Build the emscripten-enabled clang toolchain.
 	mkdir -p /tmp/emscripten
 	cd /tmp/emscripten ; /build/emscripten-fastcomp/configure --enable-optimized --disable-assertions --enable-targets=host,js --prefix=/usr
