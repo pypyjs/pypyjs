@@ -130,6 +130,10 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 	mkdir -p build
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/rematcher.js ./tools/rematcher.py
 
+./build/rematcher-nojit.js:
+	mkdir -p build
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/rematcher-nojit.js ./tools/rematcher.py
+
 
 # Convenience target to launch a shell in the dockerized build environment.
 
@@ -141,7 +145,7 @@ shell:
 
 .PHONY: test-jit-backend
 test-jit-backend:
-	$(PYTHON) $(CURDIR)/deps/pypy/pytest.py -vx ./deps/pypy/rpython/jit/backend/asmjs
+	$(PYTHON) $(CURDIR)/deps/pypy/pytest.py --platform=emscripten -vx ./deps/pypy/rpython/jit/backend/asmjs
 
 .PHONY: test-js-module
 test-js-module:
