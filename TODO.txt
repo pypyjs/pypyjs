@@ -2,6 +2,23 @@
  * flesh out dist bundle readme
  * add high-level "interact" method for fun nodejs demo
 
+* fixes from after 2.5.0 merge:
+   * clean up thread-local-ref handling in jit backend
+   * AbstractFailDescr _attrs_
+      * ISTM that the x86 backend was using _x86_adr_jump_offset,
+        and is now using a declared adr_jump_offset
+      * we should use rd_locs for faillocs, adr_jump_offset for block ref,
+        then store the extra descr details in a hash on the block.
+   * leaked allocations in jit backend tests
+      * we may want to avoid mallocing in the jit backend?
+   * failing tests:
+      * test_runner -> many
+      * translation tests require new errno-saving logic
+   * lots of new unaligned stores, perhaps some new memory-zeroing thing?
+       * OP_RAW_MEMCLEAR ?
+       * RPyField(...) = 0L; ?
+   * make release-debug wants to call gcc for some strange reason...
+
 developer niceties:
   * high-level intro to the various modules, where they live
     and what they do
@@ -18,20 +35,15 @@ SOON:
 
 
 improve the jitted code:
- * compile everything into a single module to avoid func call overhead
  * generate switch or if or something else depending on the conditions
    that we're actually processing, rather than always doing a switch.
  * avoid lots of pointless swapping of variables
- * suspended exprs to reduce variable pressure
  * tighten up code around func calls
-    * don't use the frame for gcroot, to reduce need for write barrier?
     * don't spill things to frame if they're already there
- * shared helper code for failing guards?
  * remove unneeded conversions to unsigned e.g. in write barrier?
  * reduce number of comparisons in write barrier
  * somehow reduce overhead of dynCall_XXX()?
    * maybe send relevant funcs into the jitted code via plt?
-
 
 * almost all JIT overhead is spent in support.jitRecompile() - up to several seconds in many cases!
    * this is dominated by a handful of large functions that generate
