@@ -1,0 +1,24 @@
+{
+  "name": "pypyjs",
+  "version": "0.2.0",
+  "author": "Ryan Kelly <ryan@rfk.id.au>",
+  "description": "The PyPy Python VM, in JavaScript",
+  "keywords": ["python", "pypy", "asmjs", "emscripten", "wtf"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rfk/pypyjs"
+  },
+  "homepage": "http://pypyjs.org/",
+  "bugs": "https://github.com/rfk/pypyjs/issues/",
+  "main": "./lib/pypy.js",
+  "files": [
+    "lib/",
+    "tools/",
+    "README.rst",
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "license": "MIT"
+}

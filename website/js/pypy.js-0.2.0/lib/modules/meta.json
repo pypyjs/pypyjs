@@ -1,0 +1,528 @@
+{
+  "exclude": [
+    "readline", 
+    "ntpath", 
+    "macpath", 
+    "os2emxpath", 
+    "ctypes", 
+    "ctypes_support", 
+    "ctypes_configure", 
+    "ctypes_configure_cache", 
+    "_ctypes", 
+    "cffi", 
+    "_ffi", 
+    "_rawffi", 
+    "subprocess", 
+    "_subprocess", 
+    "threading", 
+    "thread", 
+    "multiprocessing", 
+    "_multiprocessing", 
+    "audiodev", 
+    "audioop", 
+    "Carbon", 
+    "MacOS", 
+    "_osx_supportsmtpd", 
+    "idlelib", 
+    "Tkinter", 
+    "Tkconstants", 
+    "_tkinter", 
+    "ttk", 
+    "__main__", 
+    "bsddb", 
+    "ssl", 
+    "_ssl", 
+    "_winreg", 
+    "cpyext", 
+    "symtable", 
+    "java", 
+    "msilib", 
+    "dos", 
+    "nt", 
+    "os2", 
+    "org.python", 
+    "riscos", 
+    "riscosenviron", 
+    "vmslib", 
+    "win32api", 
+    "win32con", 
+    "win32pipe", 
+    "win32wnet", 
+    "win32evtlog", 
+    "msvcrt", 
+    "hotshot", 
+    "sunau", 
+    "sunaudio", 
+    "wave"
+  ], 
+  "missing": {
+    "EasyDialogs.AskPassword": [
+      "getpass"
+    ], 
+    "ElementC14N._serialize_c14n": [
+      "xml.etree.ElementTree"
+    ], 
+    "Mailman.MailList": [
+      "smtpd"
+    ], 
+    "Mailman.Message": [
+      "smtpd"
+    ], 
+    "Mailman.Utils": [
+      "smtpd"
+    ], 
+    "Pyrex.Distutils.build_ext.build_ext": [
+      "distutils.tests.setuptools_extension", 
+      "distutils.tests.setuptools_build_ext"
+    ], 
+    "RAnDoM": [
+      "test.test_import"
+    ], 
+    "SOCKS": [
+      "ftplib"
+    ], 
+    "Spam": [
+      "test.test_new"
+    ], 
+    "__hello__": [
+      "test.test_frozen"
+    ], 
+    "__mangled_mod": [
+      "test.test_compile"
+    ], 
+    "__package__.module": [
+      "test.test_compile"
+    ], 
+    "__phello__": [
+      "test.test_frozen"
+    ], 
+    "__phello__.spam": [
+      "test.test_frozen"
+    ], 
+    "_bisect.*": [
+      "bisect"
+    ], 
+    "_continuation": [
+      "greenlet", 
+      "stackless"
+    ], 
+    "_dummy_threading.*": [
+      "dummy_threading"
+    ], 
+    "_dummy_threading.__all__": [
+      "dummy_threading"
+    ], 
+    "_emx_link.link": [
+      "os"
+    ], 
+    "_heapq.*": [
+      "heapq"
+    ], 
+    "_hotshot": [
+      "test.test_hotshot"
+    ], 
+    "_json.make_scanner": [
+      "json.scanner"
+    ], 
+    "_json.scanstring": [
+      "json.decoder"
+    ], 
+    "_lsprof": [
+      "cProfile", 
+      "test.test_cprofile"
+    ], 
+    "_pyrepl_utils.disp_str": [
+      "pyrepl.reader"
+    ], 
+    "_pyrepl_utils.init_unctrl_map": [
+      "pyrepl.reader"
+    ], 
+    "_sysconfigdata.build_time_vars": [
+      "distutils.sysconfig_cpython"
+    ], 
+    "_xmlplus": [
+      "xml.__init__"
+    ], 
+    "_xmlrpclib": [
+      "xmlrpclib"
+    ], 
+    "applesingle": [
+      "test.test_applesingle"
+    ], 
+    "areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation": [
+      "test.test_repr"
+    ], 
+    "areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.bar": [
+      "test.test_repr"
+    ], 
+    "areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.baz": [
+      "test.test_repr"
+    ], 
+    "areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.foo": [
+      "test.test_repr"
+    ], 
+    "areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation.qux": [
+      "test.test_repr"
+    ], 
+    "bz2": [
+      "encodings.bz2_codec", 
+      "fileinput", 
+      "tarfile", 
+      "test.test_tarfile", 
+      "test.test_codecs"
+    ], 
+    "bz2.BZ2Compressor": [
+      "test.test_bz2"
+    ], 
+    "bz2.BZ2Decompressor": [
+      "test.test_bz2"
+    ], 
+    "bz2.BZ2File": [
+      "test.test_bz2"
+    ], 
+    "ce": [
+      "os"
+    ], 
+    "ce.*": [
+      "os"
+    ], 
+    "ce._exit": [
+      "os"
+    ], 
+    "cl": [
+      "aifc"
+    ], 
+    "cocoasupport.CocoaInteracter": [
+      "pyrepl.python_reader"
+    ], 
+    "dl.RTLD_NOW": [
+      "distutils.tests.setuptools_build_ext"
+    ], 
+    "docutils": [
+      "distutils.tests.test_register"
+    ], 
+    "docutils.frontend": [
+      "distutils.command.check"
+    ], 
+    "docutils.nodes": [
+      "distutils.command.check"
+    ], 
+    "docutils.parsers.rst.Parser": [
+      "distutils.command.check"
+    ], 
+    "docutils.utils.Reporter": [
+      "distutils.command.check"
+    ], 
+    "fcntl": [
+      "asyncore", 
+      "mailbox", 
+      "posixfile", 
+      "SimpleXMLRPCServer", 
+      "tempfile", 
+      "test.test_signal", 
+      "test.test_mailbox", 
+      "test.test_io"
+    ], 
+    "fcntl.I_PUSH": [
+      "pty"
+    ], 
+    "fcntl.ioctl": [
+      "pty", 
+      "pyrepl.unix_console"
+    ], 
+    "foo": [
+      "test.test_pkgutil", 
+      "test.badsyntax_future5"
+    ], 
+    "gestalt": [
+      "platform", 
+      "test.test_platform"
+    ], 
+    "gestalt.gestalt": [
+      "platform", 
+      "test.leakers.test_gestalt"
+    ], 
+    "hooktestmodule": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.futrel": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.newabs": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.newrel": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.oldabs": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.sub": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.sub.subber": [
+      "test.test_importhooks"
+    ], 
+    "hooktestpackage.sub.subber.subest": [
+      "test.test_importhooks"
+    ], 
+    "imgfile": [
+      "test.test_imageop"
+    ], 
+    "macostools": [
+      "test.test_macostools"
+    ], 
+    "mmap": [
+      "test.win_console_handler", 
+      "test.test_zlib", 
+      "test.test_os"
+    ], 
+    "myfixes.fix_explicit.FixExplicit": [
+      "lib2to3.tests.test_refactor"
+    ], 
+    "myfixes.fix_first.FixFirst": [
+      "lib2to3.tests.test_refactor"
+    ], 
+    "myfixes.fix_last.FixLast": [
+      "lib2to3.tests.test_refactor"
+    ], 
+    "myfixes.fix_parrot.FixParrot": [
+      "lib2to3.tests.test_refactor"
+    ], 
+    "myfixes.fix_preorder.FixPreorder": [
+      "lib2to3.tests.test_refactor"
+    ], 
+    "netbios": [
+      "uuid"
+    ], 
+    "ossaudiodev.AFMT_S16_NE": [
+      "test.test_ossaudiodev"
+    ], 
+    "py": [
+      "ctypes_config_cache.rebuild"
+    ], 
+    "pyexpat": [
+      "xml.etree.ElementTree"
+    ], 
+    "pyexpat.*": [
+      "xml.parsers.expat"
+    ], 
+    "pygame": [
+      "pyrepl.pygame_console"
+    ], 
+    "pygame.locals.*": [
+      "pyrepl.pygame_keymap", 
+      "pyrepl.pygame_console"
+    ], 
+    "reloadmodule": [
+      "test.test_importhooks"
+    ], 
+    "riscospath": [
+      "os"
+    ], 
+    "rourl2path.pathname2url": [
+      "urllib"
+    ], 
+    "rourl2path.url2pathname": [
+      "urllib"
+    ], 
+    "rpython.tool.ansi_print.ansi_log": [
+      "ctypes_config_cache.rebuild"
+    ], 
+    "runtktests": [
+      "test.test_ttk_textonly", 
+      "test.test_ttk_guionly", 
+      "test.test_tk"
+    ], 
+    "select": [
+      "asyncore", 
+      "CGIHTTPServer", 
+      "logging.config", 
+      "pydoc", 
+      "SocketServer", 
+      "telnetlib", 
+      "test.test_ssl", 
+      "test.test_socketserver", 
+      "test.test_socket", 
+      "test.test_smtplib", 
+      "test.test_signal", 
+      "test.test_select", 
+      "test.test_pty", 
+      "test.test_poll", 
+      "test.test_logging", 
+      "test.test_kqueue", 
+      "test.test_file_eintr", 
+      "test.test_file2k", 
+      "test.test_epoll", 
+      "test.test_asyncore", 
+      "pyrepl.unix_console"
+    ], 
+    "select.select": [
+      "pty"
+    ], 
+    "sgi": [
+      "pty"
+    ], 
+    "signal": [
+      "test.win_console_handler", 
+      "test.test_threadsignals", 
+      "test.test_tempfile", 
+      "test.test_subprocess", 
+      "test.test_socketserver", 
+      "test.test_socket", 
+      "test.test_signal", 
+      "test.test_pty", 
+      "test.test_os", 
+      "test.test_multiprocessing", 
+      "test.test_largefile", 
+      "test.test_io", 
+      "test.test_fork1", 
+      "test.test_file_eintr", 
+      "test.test_file2k", 
+      "unittest.test.test_break", 
+      "unittest.signals", 
+      "pyrepl.unix_console", 
+      "pyrepl.python_reader", 
+      "pyrepl.commands"
+    ], 
+    "sitecustomize": [
+      "site", 
+      "test.test_site"
+    ], 
+    "strop": [
+      "test.test_strop"
+    ], 
+    "strop.lowercase": [
+      "string", 
+      "stringold"
+    ], 
+    "strop.maketrans": [
+      "string", 
+      "stringold"
+    ], 
+    "strop.uppercase": [
+      "string", 
+      "stringold"
+    ], 
+    "strop.whitespace": [
+      "string", 
+      "stringold"
+    ], 
+    "sub": [
+      "test.test_importhooks"
+    ], 
+    "t1": [
+      "test.test_pkg"
+    ], 
+    "t2.sub": [
+      "test.test_pkg"
+    ], 
+    "t2.sub.subsub": [
+      "test.test_pkg"
+    ], 
+    "t2.sub.subsub.spam": [
+      "test.test_pkg"
+    ], 
+    "t3.sub.subsub": [
+      "test.test_pkg"
+    ], 
+    "t5": [
+      "test.test_pkg"
+    ], 
+    "t6": [
+      "test.test_pkg"
+    ], 
+    "t7": [
+      "test.test_pkg"
+    ], 
+    "t7.sub": [
+      "test.test_pkg"
+    ], 
+    "t7.sub.subsub": [
+      "test.test_pkg"
+    ], 
+    "t7.sub.subsub.spam": [
+      "test.test_pkg"
+    ], 
+    "t8": [
+      "test.test_pkg"
+    ], 
+    "termios": [
+      "getpass", 
+      "pyrepl.unix_console", 
+      "pyrepl.fancy_termios"
+    ], 
+    "termios.*": [
+      "tty"
+    ], 
+    "termios.VERASE": [
+      "pyrepl.unix_eventqueue"
+    ], 
+    "termios.tcgetattr": [
+      "pyrepl.unix_eventqueue"
+    ], 
+    "test_bug737473": [
+      "test.test_traceback"
+    ], 
+    "test_ttk.support.get_tk_root": [
+      "test.test_ttk_guionly"
+    ], 
+    "test_zipped_doctest": [
+      "test.test_zipimport_support"
+    ], 
+    "twisted.internet.abstract.FileDescriptor": [
+      "pyrepl.python_reader"
+    ], 
+    "twisted.internet.reactor": [
+      "pyrepl.python_reader"
+    ], 
+    "usercustomize": [
+      "site"
+    ], 
+    "vms_lib": [
+      "platform"
+    ], 
+    "win32evtlogutil": [
+      "logging.handlers"
+    ], 
+    "xx": [
+      "distutils.tests.test_build_ext"
+    ], 
+    "xxsubtype": [
+      "test.test_descr"
+    ], 
+    "zip_pkg": [
+      "test.test_zipimport_support"
+    ], 
+    "zipimport": [
+      "pkgutil", 
+      "site", 
+      "test.test_zipimport_support", 
+      "test.test_zipimport", 
+      "test.test_pkgutil", 
+      "test.regrtest"
+    ], 
+    "zipimport.zipimporter": [
+      "pkgutil"
+    ], 
+    "zlib": [
+      "distutils.tests.test_sdist", 
+      "distutils.tests.test_bdist_dumb", 
+      "distutils.tests.test_archive_util", 
+      "encodings.zlib_codec", 
+      "gzip", 
+      "sqlite3.test.types", 
+      "tarfile", 
+      "test.test_zipimport", 
+      "test.test_zipfile64", 
+      "test.test_zipfile", 
+      "test.test_shutil", 
+      "test.test_codecs", 
+      "test.string_tests", 
+      "zipfile"
+    ]
+  }
+}
