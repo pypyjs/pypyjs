@@ -4,3 +4,4 @@
 *.swp
 build
 .DS_Store
+lib/modules/
