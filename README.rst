@@ -32,9 +32,15 @@ The Makefile knows how to use this image during the build::
     $> make
 
 Be prepared, this will take a *long* time.  It will eventually produce the file
-`./build/pypy.vm.js` containing the code for the interpreter.  Take a look in
-the `./website/demo` directory for an example of how to distribute and use
-this file.
+`./build/pypy.vm.js` containing the code for the interpreter.  This goes together
+with support files in `./lib/` to make a complete distribution.
+
+To get a full release tarball, do::
+
+    $> make release
+
+Take a look in the `./website/js/` directory for an example of how to distribute
+and use the resulting bundle.
 
 To build from an in-progress branch of the pypy repository, check it out
 in the submodule like so::
