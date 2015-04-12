@@ -30,7 +30,7 @@
 
 DOCKER_IMAGE = rfkelly/pypyjs-build
 
-DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS"
+DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" -e "IN_DOCKER=1"
 
 ifeq ($(shell uname -s),Linux)
     # For linux, we can mount /etc/passwd and actually run as the current
@@ -41,7 +41,11 @@ ifeq ($(shell uname -s),Linux)
     DOCKER_ARGS += -v /etc/passwd:/etc/passwd -u $(USER)
 endif
 
-DOCKER = docker run $(DOCKER_ARGS) $(DOCKER_IMAGE)
+ifeq ($(IN_DOCKER), 1)
+    DOCKER =
+else
+    DOCKER = docker run $(DOCKER_ARGS) $(DOCKER_IMAGE)
+endif
 
 # Change these variables if you want to use a custom build environment.
 # They must point to the emscripten compiler, a 32-bit python executable
