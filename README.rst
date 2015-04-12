@@ -10,6 +10,8 @@ for my experimental emscripten/asmjs backend for PyPy, as described here:
 
     https://www.rfk.id.au/blog/entry/pypy-js-first-steps/
 
+For the history of the project, see `NEWS <NEWS.md>`_.
+
 The actual PyPy backend is maintained as a git submodule pointing to a fork
 of a github clone of the upstream PyPy repository:
 
@@ -18,8 +20,7 @@ of a github clone of the upstream PyPy repository:
 You can get all the necessary code from within this top-level repository
 by accessing it as a git submodule::
 
-    $> git submodule init
-    $> git submodule update
+    $> git submodule update --init
 
 Building pypyjs requires a 32-bit python environment and the emscripten-enabled
 LLVM toolchain.  The recommended way to build is using the pre-built docker
