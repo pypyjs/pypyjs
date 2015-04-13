@@ -28,7 +28,13 @@ image containing these dependencies::
 
     $> docker pull rfkelly/pypyjs-build
 
-The Makefile knows how to use this image during the build::
+The Makefile knows how to use this image transparently during build and
+test.  You can run various parts of the testsuite like this::
+
+    $> make test-js-module
+    $> make test-jit-backend
+
+Do do a full build of the PyPy VM like this::
 
     $> make
 
@@ -50,11 +56,6 @@ in the submodule like so::
     $> git checkout whatever-branch
     $> cd ../../
     $> make
-
-You can run various parts of the testsuite like this::
-
-    $> make test-jit-backend
-    $> make test-js-module
 
 If you'd like to hack on PyPyJS, the following background reading will
 be helpful:
