@@ -6,7 +6,7 @@ PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
 
 This is a very-much-in-flux collection of supporting scripts and infrastructure
-for my experimental emscripten/asmjs backend for PyPy, as described here:
+for an experimental emscripten/asmjs backend for PyPy, as described here:
 
     https://www.rfk.id.au/blog/entry/pypy-js-first-steps/
 
@@ -33,8 +33,8 @@ The Makefile knows how to use this image during the build::
     $> make
 
 Be prepared, this will take a *long* time.  It will eventually produce the file
-`./build/pypy.vm.js` containing the code for the interpreter.  This goes together
-with support files in `./lib/` to make a complete distribution.
+`./build/pypy.vm.js` containing the code for the interpreter.  This goes
+together with support files in `./lib/` to make a complete distribution.
 
 To get a full release tarball, do::
 
@@ -51,10 +51,10 @@ in the submodule like so::
     $> cd ../../
     $> make
 
-You can also run the testsuite like this::
+You can run various parts of the testsuite like this::
 
     $> make test-jit-backend
-
+    $> make test-js-module
 
 If you'd like to hack on PyPyJS, the following background reading will
 be helpful:
@@ -62,4 +62,21 @@ be helpful:
   * http://pypy.readthedocs.org/en/latest/translation.html
   * http://pypy.readthedocs.org/en/latest/coding-guide.html
 
+We have the following major components in the PyPy repo:
+
+  * An "emscripten" build platform definition, which teaches pypy's rpython
+    toolchain how to compile things with emscripten:
+    `./deps/pypy/rpython/translator/platform/emscripten_platform/`.
+  * An rpython JIT backend that emits asmjs at runtime:
+    `./deps/pypy/rpython/jit/backend/asmjs/`.
+  * A "js" builtin module for the resulting interperter, to allow interaction
+    with the host javascript environment:
+    `./deps/pypy/pypy/module/js/`.
+
+Along with these wrappers to help working with the resulting interpreter:
+
+  * A wrapper to load up the compiled VM and expose it via a nice javascript
+    API: `./lib/pypy.js`.
+  * A script for bundling python modules into an indexed format that can be
+    easily loaded into the browser:  `./tools/module_bundler.py`.
 
