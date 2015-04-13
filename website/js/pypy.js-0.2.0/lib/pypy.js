@@ -287,7 +287,7 @@ function PyPyJS(opts) {
         }).bind(this));
       }).bind(this))
     }).bind(this))
-    .then(resolve, function(err){ debug("ERROR: " + err); reject(err) });
+    .then(resolve, reject);
   }).bind(this));
 
 };
