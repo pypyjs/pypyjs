@@ -139,6 +139,8 @@ EXCLUDE_MODULES = [
     "sunau",
     "sunaudio",
     "wave",
+    "sqlite3",
+    "curses",
 ]
 
 # Modules that are pretty much always needed, and so should be loaded eagerly.
