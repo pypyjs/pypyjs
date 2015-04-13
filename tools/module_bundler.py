@@ -169,6 +169,8 @@ def main(argv):
                              help="exclude these modules from the bundle")
     parser_init.add_argument("--preload", action="append",
                              help="preload these modules in the bundle")
+    parser_init.add_argument("--pypy-root", action="store",
+                             help="root directory of pypy source checkout")
 
     parser_add = subparsers.add_parser("add")
     parser_add.add_argument("bundle_dir")
@@ -203,8 +205,12 @@ def cmd_init(bundler, opts):
                 bundler.exclude.append(name)
     # Walk the pypy stdlib dirs to find all available module files and
     # copy them into the bundle.
+    if opts.pypy_root:
+        pypy_root = opts.pypy_root
+    else:
+        pypy_root = PYPY_ROOT
     for modroot in ("lib-python/2.7", "lib_pypy"):
-        rootdir = os.path.join(PYPY_ROOT, modroot)
+        rootdir = os.path.join(pypy_root, modroot)
         bundler.bundle_directory(rootdir)
     # Preload the default set of preloaded modules.
     for name in PRELOAD_MODULES:
