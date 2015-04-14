@@ -6,4 +6,5 @@ make their contributions available under the terms of the project license:
 * Ian Meikle
 * Buck Evan <buck.2019@gmail.com>
 * Jason Kraus
+* Min RK
 
