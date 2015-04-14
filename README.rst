@@ -60,8 +60,8 @@ in the submodule like so::
 If you'd like to hack on PyPyJS, the following background reading will
 be helpful:
 
-  * http://pypy.readthedocs.org/en/latest/translation.html
-  * http://pypy.readthedocs.org/en/latest/coding-guide.html
+  * https://rpython.readthedocs.org/en/latest/translation.html
+  * https://pypy.readthedocs.org/en/latest/coding-guide.html
 
 We have the following major components in the PyPy repo:
 
