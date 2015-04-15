@@ -7,4 +7,4 @@ make their contributions available under the terms of the project license:
 * Buck Evan <buck.2019@gmail.com>
 * Jason Kraus
 * Min RK
-
+* Anthony Sottile <asottile@umich.edu>
