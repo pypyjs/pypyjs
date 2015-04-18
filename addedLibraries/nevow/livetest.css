@@ -1,0 +1,33 @@
+
+body { margin: 0px; }
+
+table { table-layout: fixed; }
+
+th { text-align: left; }
+
+td { overflow: hidden; white-space: nowrap; }
+
+#testprogress {
+    width: 300px;
+}
+
+.test-passes {
+    background-color: rgb(26, 198, 64);
+}
+
+.test-failures {
+    background-color: rgb(241, 12, 20);
+}
+
+#testresults {
+    width: 300px;
+}
+
+#testframe {
+    position: fixed;
+    top: 0px;
+    left: 300px;
+    right: 0px;
+    bottom: 0px;
+    border: 0px;
+}
