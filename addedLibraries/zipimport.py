@@ -1,2 +1,0 @@
-class zipimporter(object):
-    pass
