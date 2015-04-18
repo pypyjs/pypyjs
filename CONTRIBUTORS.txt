@@ -8,3 +8,4 @@ make their contributions available under the terms of the project license:
 * Jason Kraus
 * Min RK
 * Anthony Sottile <asottile@umich.edu>
+* Logan Perkins <perkins@injeanieousdesigns.com>
