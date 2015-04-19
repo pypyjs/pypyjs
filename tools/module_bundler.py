@@ -181,6 +181,8 @@ def main(argv):
                             help="exclude these modules from the bundle")
     parser_add.add_argument("--preload", action="append",
                             help="preload these modules in the bundle")
+    parser_add.add_argument("--include", action="append",
+                            help="include these modules in the bundle, overrides exclude")
 
     parser_preload = subparsers.add_parser("preload")
     parser_preload.add_argument("bundle_dir")
@@ -205,6 +207,10 @@ def cmd_init(bundler, opts):
         for name in opts.exclude:
             if not bundler.is_excluded(name):
                 bundler.exclude.append(name)
+    if opts.include:
+        for name in opts.include:
+            if bundler.is_excluded(name):
+                bundler.exclude.remove(name)
     # Walk the pypy stdlib dirs to find all available module files and
     # copy them into the bundle.
     if opts.pypy_root:
@@ -230,6 +236,10 @@ def cmd_add(bundler, opts):
         for name in opts.exclude:
             if not bundler.is_excluded(name):
                 bundler.exclude.append(name)
+    if opts.include:
+        for name in opts.include:
+            if bundler.is_excluded(name):
+                bundler.exclude.remove(name)
     # Find and bundle each module/package.
     for name in opts.modules:
         if os.path.exists(name):
