@@ -169,6 +169,8 @@ def main(argv):
     parser_init.add_argument("bundle_dir")
     parser_init.add_argument("--exclude", action="append",
                              help="exclude these modules from the bundle")
+    parser_init.add_argument("--include", action="append",
+                            help="include these modules in the bundle, overrides exclude")
     parser_init.add_argument("--preload", action="append",
                              help="preload these modules in the bundle")
     parser_init.add_argument("--pypy-root", action="store",
