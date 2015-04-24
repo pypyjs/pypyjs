@@ -186,7 +186,9 @@ def main(argv):
 
     parser_preload = subparsers.add_parser("preload")
     parser_preload.add_argument("bundle_dir")
-    parser_preload.add_argument("modules", nargs="+", metavar="module")
+    parser_preload.add_argument("modules", nargs="*", metavar="module")
+    parser_preload.add_argument("--remove", action="append",
+                            help="remove these modules from the preload list and from the module list.  If the module is not currently preloaded, it removes the entry from the package list, leaving the underlying file alone (it can be safely removed).")
 
     opts = parser.parse_args(argv[1:])
     bundler = ModuleBundle(opts.bundle_dir)
@@ -257,6 +259,12 @@ def cmd_add(bundler, opts):
 def cmd_preload(bundler, opts):
     for name in opts.modules:
         bundler.preload_module(name)
+    if opts.remove:
+        for name in opts.remove:
+            if name in bundler.preload:
+                del bundler.preload[name]
+            if name in bundler.modules:
+                del bundler.modules[name]
     bundler.flush_index()
 
 
