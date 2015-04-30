@@ -147,6 +147,9 @@ shell:
 
 # Convenience targets for running the tests.
 
+.PHONY: test
+test: test-js-module test-jit-backend
+
 .PHONY: test-jit-backend
 test-jit-backend:
 	$(PYTHON) $(CURDIR)/deps/pypy/pytest.py --platform=emscripten -vx ./deps/pypy/rpython/jit/backend/asmjs
