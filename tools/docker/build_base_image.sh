@@ -66,6 +66,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
         libgc-dev \
         libncurses-dev \
         libz-dev \
+        pkg-config \
         python-dev \
         python-setuptools \
         libboost-system-dev \
