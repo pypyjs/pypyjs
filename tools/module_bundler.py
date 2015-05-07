@@ -153,6 +153,7 @@ PRELOAD_MODULES = [
     "encodings.hex_codec",
     "encodings.base64_codec",
     "encodings.latin_1",
+    "encodings.string_escape",
     "encodings.utf_8",
     "encodings.utf_16",
     "encodings.unicode_internal",
