@@ -30,7 +30,7 @@
 
 DOCKER_IMAGE = rfkelly/pypyjs-build
 
-DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" -e "IN_DOCKER=1"
+DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" -e "EMCFLAGS=$$EMCFLAGS" -e "EMLDFLAGS=$$EMLDFLAGS" -e "IN_DOCKER=1"
 
 ifeq ($(shell uname -s),Linux)
     # For linux, we can mount /etc/passwd and actually run as the current
@@ -88,7 +88,8 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
 	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
-	python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypy.vm.js
+	# Cromulate for better compressibility, unless it's a debug build.
+	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypy.vm.js ; fi
 	# Copy the supporting JS library code.
 	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js $(RELDIR)/lib/
 	python tools/module_bundler.py init $(RELDIR)/lib/modules/
@@ -117,7 +118,7 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 
 ./build/pypy-debug.vm.js:
 	mkdir -p build
-	export LDFLAGS="$$LDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	export EMLDFLAGS="$$EMLDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
 # This builds a version of pypy.js without its JIT, which is useful for
