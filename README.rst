@@ -11,7 +11,7 @@ the project (and try it out live!) here:
 
     http://pypyjs.org/
 
-If you just want to use a pre-compiled PyPy.js interperter, please download
+If you just want to use a pre-compiled PyPy.js interpreter, please download
 a release bundle from the above website and follow the instructions in the
 included `README <README.dist.rst>`_.
 
