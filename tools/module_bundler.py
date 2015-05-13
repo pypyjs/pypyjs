@@ -153,6 +153,7 @@ PRELOAD_MODULES = [
     "encodings.hex_codec",
     "encodings.base64_codec",
     "encodings.latin_1",
+    "encodings.string_escape",
     "encodings.utf_8",
     "encodings.utf_16",
     "encodings.unicode_internal",
@@ -169,6 +170,8 @@ def main(argv):
     parser_init.add_argument("bundle_dir")
     parser_init.add_argument("--exclude", action="append",
                              help="exclude these modules from the bundle")
+    parser_init.add_argument("--include", action="append",
+                            help="include these modules in the bundle, overrides exclude")
     parser_init.add_argument("--preload", action="append",
                              help="preload these modules in the bundle")
     parser_init.add_argument("--pypy-root", action="store",
@@ -186,10 +189,14 @@ def main(argv):
 
     parser_preload = subparsers.add_parser("preload")
     parser_preload.add_argument("bundle_dir")
-    parser_preload.add_argument("modules", nargs="*", metavar="module")
-    parser_preload.add_argument("--remove", action="append",
-                            help="remove these modules from the preload list and from the module list.  If the module is not currently preloaded, it removes the entry from the package list, leaving the underlying file alone (it can be safely removed).")
-
+    parser_preload.add_argument("modules", nargs="+", metavar="module")
+    
+    parser_remove = subparsers.add_parser("remove")
+    parser_remove.add_argument("bundle_dir")
+    parser_remove.add_argument("modules", nargs="+", metavar="module")
+    parser_remove.add_argument("--purge", action="store_true", default=False,
+                               help="delete the modules out of the bundle_dir, instead of just de-listing them")
+    
     opts = parser.parse_args(argv[1:])
     bundler = ModuleBundle(opts.bundle_dir)
     if opts.subcommand == "init":
@@ -198,6 +205,8 @@ def main(argv):
         cmd_add(bundler, opts)
     elif opts.subcommand == "preload":
         cmd_preload(bundler, opts)
+    elif opts.subcommand == "remove":
+        cmd_remove(bundler, opts)
     else:
         assert False, "unknown subcommand {}".format(opts.subcommand)
     return 0
@@ -259,14 +268,24 @@ def cmd_add(bundler, opts):
 def cmd_preload(bundler, opts):
     for name in opts.modules:
         bundler.preload_module(name)
-    if opts.remove:
-        for name in opts.remove:
-            if name in bundler.preload:
-                del bundler.preload[name]
-            if name in bundler.modules:
-                del bundler.modules[name]
     bundler.flush_index()
 
+def cmd_remove(bundler, opts):
+    for name in opts.modules:
+        for module in bundler.modules.copy():
+            if re.match(name, module):
+                if opts.purge:
+                    file_name = bundler.modules[module].get("file", None)
+                    if file_name and os.path.exists(os.path.join(bundler.bundle_dir, file_name)):
+                        os.remove(os.path.join(bundler.bundle_dir, file_name))
+                    dir_name = bundler.modules[module].get("dir", None)
+                    if dir_name and os.path.exists(os.path.join(bundler.bundle_dir, dir_name)):
+                        shutil.rmtree(os.path.join(bundler.bundle_dir, dir_name))
+                bundler.modules.pop(module)
+        for module in bundler.preload.copy():
+            if re.match(name, module):
+                bundler.preload.pop(module)
+    bundler.flush_index()
 
 class ModuleBundle(object):
     """Class managing a directory of bundled modules.
