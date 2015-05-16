@@ -157,17 +157,34 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     def setUp(self):
         self.clear_console()
 
-    def _execute_code(self, txt):
+    def _execute_code(self, txt, timeout=10):
         txt=txt.replace("\\", "\\\\")
         txt=txt.replace("'", "\\'")
         script = "\\n".join(textwrap.dedent(txt).strip().splitlines())
-        script = "vm.eval('%s\\n');" % script
 
-        self.out('\nExecute script: %r' % script)
+        # Add a element to DOM tree to trigger the end of vm.eval() call:
+        self.driver.execute_script(
+            "$('body').append( $('<div/>').attr('id','selenium_vm_run') );"
+        )
+        run_element = self.driver.find_element_by_id("selenium_vm_run")
+
+        script = (
+            "vm.eval('%s\\n').then(function() {"
+            "$( '#selenium_vm_run' ).remove();"
+            "});"
+        ) % script
+
+        # self.out('\nExecute script: %r' % script)
         self.driver.execute_script(script)
 
-    def assertExecution(self, python_script, console_output):
-        self._execute_code(python_script)
+        # Wait that vm.eval() is really finished: The added DOM element will be remove
+        check = WebDriverWait(self.driver, timeout).until(
+            expected_conditions.staleness_of(run_element)
+        )
+        self.assertTrue(check)
+
+    def assertExecution(self, python_script, console_output, timeout=10):
+        self._execute_code(python_script, timeout)
         self.assertConsole(console_output)
 
     def test_execute_escaping(self):
