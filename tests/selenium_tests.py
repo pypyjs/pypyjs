@@ -263,8 +263,23 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         https://github.com/rfk/pypyjs/issues/83
         """
         self.assertExecution("""
+            import cPickle as pickle
+            d = pickle.dumps({'foo': 'bar'})
+            print d
+            print pickle.loads(d)
+        """, """
+            (dp1
+            S'foo'
+            p2
+            S'bar'
+            p3
+            s.
+            {'foo': 'bar'}
+        """)
+        self.clear_console()
+        self.assertExecution("""
             import pickle
-            print(pickle.loads(pickle.dumps({'a': 'a'})))
+            print pickle.loads(pickle.dumps({'a': 'a'}))
         """, """
             {'a': 'a'}
         """)
