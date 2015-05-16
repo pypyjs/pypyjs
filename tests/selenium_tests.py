@@ -102,6 +102,7 @@ class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
     Tests that reload the page completely.
     This will take relative long time :(
     """
+
     def setUp(self):
         self.driver.get(self.index_url)
         try:
@@ -149,57 +150,153 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         )
         assert check
 
-    def setUp(self):
+    def clear_console(self):
         self.driver.execute_script('jqconsole.Reset()')
-        self.assertConsole()  # is empty?
+        self.assertConsole("")  # is empty?
 
-    def _execute(self, *args):
-        for arg in args:
-            self.driver.execute_script('vm.eval("%s")' % arg)
+    def setUp(self):
+        self.clear_console()
+
+    def _execute_code(self, txt):
+        txt=txt.replace("\\", "\\\\")
+        txt=txt.replace("'", "\\'")
+        script = "\\n".join(textwrap.dedent(txt).strip().splitlines())
+        script = "vm.eval('%s\\n');" % script
+
+        self.out('\nExecute script: %r' % script)
+        self.driver.execute_script(script)
+
+    def assertExecution(self, python_script, console_output):
+        self._execute_code(python_script)
+        self.assertConsole(console_output)
+
+    def test_execute_escaping(self):
+        self.assertExecution("""
+            print "one"
+            print 'two'
+            print
+            print "foo\\nbar"
+            print "\\nOK\\nisn't it?"
+        """, """
+            one
+            two
+
+            foo
+            bar
+
+            OK
+            isn't it?
+        """)
+
+    def test_execute_multiline(self):
+        self.assertExecution("""
+            for i in range(2):
+                print i
+
+            print "OK"
+        """, """
+            0
+            1
+            OK
+        """)
 
     def test_sys_version(self):
-        self._execute(
-            "import sys",
-            "print(sys.version)"
-        )
-        self.assertConsole(
-            "2.7.8 (?, Apr 09 2015, 15:06:24)",
-            "[PyPy 2.5.0]",
-        )
+        self.assertExecution("""
+            import sys
+            print sys.version
+        """, """
+            2.7.8 (?, Apr 09 2015, 15:06:24)
+            [PyPy 2.5.0]
+        """)
+
+        self.clear_console()
+
+        self.assertExecution("""
+            for path in sys.path:
+                print path
+        ""","""
+            /lib/pypyjs/lib_pypy/__extensions__
+            /lib/pypyjs/lib_pypy
+            /lib/pypyjs/lib-python/2.7
+            /lib/pypyjs/lib-python/2.7/lib-tk
+            /lib/pypyjs/lib-python/2.7/plat-linux2
+        """)
+
 
     def test_sys_platform(self):
         """
         https://github.com/rfk/pypyjs/issues/49
         """
-        self._execute(
-            "import sys",
-            "print(sys.platform)"
-        )
-        self.assertConsole("js")
+        self.assertExecution("""
+            import sys
+            print sys.platform
+        """, """
+            js
+        """)
 
     def test_name(self):
-        self._execute(
-            "print(__name__)"
-        )
-        self.assertConsole('__main__')
+        self.assertExecution("print(__name__)", "__main__")
 
     def test_pickle(self):
         """
         https://github.com/rfk/pypyjs/issues/83
         """
-        self._execute(
-            "import pickle",
-            "print(pickle.loads(pickle.dumps({'a': 'a'})))"
-        )
-        self.assertConsole("{'a': 'a'}")
+        self.assertExecution("""
+            import pickle
+            print(pickle.loads(pickle.dumps({'a': 'a'})))
+        """, """
+            {'a': 'a'}
+        """)
 
     def test_js_module(self):
-        self._execute(
-            "import js",
-            "math = js.globals.Math",
-            "print(math.log(2))"
-        )
-        self.assertConsole("0.6931471805599453")
+        self.assertExecution("""
+            import js
+            math = js.globals.Math
+            print(math.log(2))
+        """, """
+            0.6931471805599453
+        """)
+
+    def test_module_random(self):
+        """
+        https://github.com/rfk/pypyjs/issues/4
+        """
+        self.assertExecution("""
+            import random
+            print random.__file__
+        """, """
+            /lib/pypyjs/lib_pypy/random.py
+        """)
+
+    def test_module_pprint(self):
+        """
+        https://github.com/rfk/pypyjs/issues/5
+        """
+        self.assertExecution("""
+            import pprint
+            print pprint.__file__
+        """, """
+            /lib/pypyjs/lib_pypy/pprint.py
+        """)
+
+    def test_module_platform(self):
+        """
+        https://github.com/rfk/pypyjs/issues/6
+        """
+        self.assertExecution("""
+            import platform
+            print platform.__file__
+        """, """
+            /lib/pypyjs/lib_pypy/platform.py
+        """)
+        
+    def test_module_os(self):
+        # os module is preloaded
+        self.assertExecution("""
+            print os.__file__
+        """, """
+            /lib/pypyjs/lib_pypy/os.py
+        """)
 
 
 if __name__ == "__main__":
