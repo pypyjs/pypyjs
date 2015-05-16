@@ -13,6 +13,7 @@
 
 """
 import difflib
+import os
 import posixpath
 import textwrap
 import traceback
@@ -75,11 +76,14 @@ class BaseSeleniumTestCase(unittest.TestCase):
         self.out("\n")
         raise
 
-    def assertConsole(self, txt):
+    def _get_console_text(self):
         console = self.driver.find_element_by_id("console")
         console_text = console.text
-        console_text = console_text.strip()
+        return console_text.strip()
 
+    def assertConsole(self, txt):
+        console_text = self._get_console_text()
+        
         txt = textwrap.dedent(txt).strip()
         msg = textwrap.dedent("""
 
@@ -314,6 +318,41 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """, """
             /lib/pypyjs/lib_pypy/os.py
         """)
+
+    def test_imports(self):
+
+        # hack a list of available modules:
+        libpath = os.path.abspath(os.path.join("..", "website/js/pypy.js-0.2.0/lib/modules"))
+        module_names = [
+            os.path.splitext(item)[0]
+            for item in sorted(os.listdir(libpath))
+            if not item.startswith("_") and item.endswith(".py")
+        ]
+
+        good = failed = 0
+        total_count = len(module_names)
+        for no, module_name in enumerate(sorted(module_names)):
+            python_script = """
+                try:
+                    import %(name)s
+                except (ImportError, NameError) as err:
+                    print "Error importing '%(name)s': %%s" %% err
+                else:
+                    print "Import '%(name)s', ok."
+            """ % {"name":module_name}
+            self.clear_console()
+            self._execute_code(python_script)
+            response = self._get_console_text()
+            if "ok" in response:
+                good += 1
+            elif "Error" in response:
+                failed += 1
+            else:
+                self.fail(msg=response)
+            self.out("%i/%i: %s" % (no, total_count, response))
+
+        self.assertEqual(failed, 0)
+
 
 
 if __name__ == "__main__":
