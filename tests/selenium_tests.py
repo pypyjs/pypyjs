@@ -79,7 +79,6 @@ class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
     Tests that reload the page completely.
     This will take relative long time :(
     """
-
     def setUp(self):
         self.driver.get(self.index_url)
         try:
@@ -183,5 +182,9 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
 if __name__ == "__main__":
     unittest.main(
         verbosity=3,
-        # failfast=True
+        # failfast=True,
+
+        # run a specific test, e.g.:
+        # argv=("selenium_tests", "PyPyJSSeleniumLowLevelTests",)
+        # argv=("selenium_tests", "PyPyJSSeleniumTests.test_js_module",)
     )
