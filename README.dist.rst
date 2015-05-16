@@ -11,7 +11,7 @@ Loading the Interpreter
 
 To create a PyPy.js interpreter, you must load the file `lib/pypy.js`.  This
 will create the global name `PyPyJS` which can be used to instantiate the
-interpreter.  In browser::
+interpreter.  In the browser::
 
     <!-- shim for ES6 `Promise` builtin -->
     <script src="./lib/Promise.min.js" type="text/javascript"></script>
@@ -38,8 +38,23 @@ attempting to interact with the interpreter.
 It is safe to create multiple `PyPyJS` interpreter objects inside a single
 javascript interpreter.  They will be completely isolated from each other.
 
-TODO: document the options to `PyPyJS` constructor, e.g. how to customize
-stdout or the virtualized filesystem.
+You can customize the behaviour of the interpreter by passing an options
+object to the `PyPyJS` constructor, like this::
+
+    var vm = new PyPyJS({
+      totalMemory:  256 * 1024 * 1024,
+      stdout: function(data) {
+        $('#output').innerHTML += data
+      },
+    });
+
+The available options are:
+
+    * totalMemory:  the amount of heap memory to allocate for the interpreter, in bytes
+    * stdin:  function simulate standard input; should return input chars when called.
+    * stdout:  function simulate standard output; will be called with output chars.
+    * stderr:  function simulate standard error; will be called with error output chars.
+    * autoLoadModules:  boolean, whether to automatically load module source files (see below).
 
 
 Invoking the Interpreter
@@ -55,7 +70,33 @@ Only primitive value types can be retrieved from the interpreter via `get`.
 This includes python numbers, strings, lists and dicts, but not custom
 objects.
 
-TODO: some simple examples.
+The following example evaluates a simple arithmetic expression via Python::
+
+    function pyDouble(x) {
+      vm.set('x', x).then(function() {
+        return vm.eval('x = x * 2');
+      }).then(function() {
+        return vm.get('x')
+      });
+    }
+
+    pyDouble(12).then(function(result) {
+      console.log(result);  // prints '24'
+    });
+
+
+Using Python Modules
+--------------------
+
+The PyPy.js interpreter uses a virtualized in-memory filesystem, which makes
+its import system a little fragile.  The source code for python modules must
+be loaded into the virtual filesystem before they can be imported.
+
+To make imports work as transparently as possible, PyPy.js ships with a bundled
+copy of the Python standard library in `./lib/modules`, and includes an index
+of 
+
+
 
 
 Interacting with the Host Environment
@@ -104,9 +145,8 @@ Python functions can be passed to javascript as callbacks like so::
 
 However, note that there is currently no integration between the garbage
 collector in PyPy.js and the one in javascript.  You *must* hold a reference
-to the function on the python side.  For example, this might fail because
-the lambda can be garbage-collected by python before it is called from
-javascript::
+to the function on the python side.  For example, this could fail if the
+lambda is garbage-collected by python before it is called from javascript::
 
     >>> js.globals.setTimeout(lambda: 42, 1000)
     # [one second passes, during which a gc occurs]
@@ -118,6 +158,4 @@ javascript::
 
 This restriction may be relaxed in future, but is unlikely to go away 
 entirely due to limitations of hooking into javascript's garbage collector.
-
-TODO: more details on what you can and can't do with js objects
 
