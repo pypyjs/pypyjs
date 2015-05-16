@@ -95,19 +95,14 @@ class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
         except Exception:
             self._verbose_assertion_error(self.driver)
 
-    def test(self):
-        self.driver.get(self.index_url)
-        self.assertConsole(
-            "Welcome to PyPy.js!",
-            ">>>",
-        )
+        # clear the console content:
+        self.driver.execute_script('jqconsole.Reset()')
 
+    def test(self):
         self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
         self.assertConsole(
-            "Welcome to PyPy.js!",
             "2.7.8 (?, Apr 09 2015, 15:06:24)",
             "[PyPy 2.5.0]",
-            ">>>",
         )
 
 
