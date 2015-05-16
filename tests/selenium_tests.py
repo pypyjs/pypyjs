@@ -1,19 +1,34 @@
 import posixpath
 import traceback
 import unittest
+import sys
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-import sys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.action_chains import ActionChains
 
 
 class BaseSeleniumTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(BaseSeleniumTestCase, cls).setUpClass()
+        cls.driver = webdriver.Firefox()
+        cls.driver.set_window_size(1024, 768)
+        cls.driver.set_window_position(0, 0)
+        path = posixpath.abspath(posixpath.join("..", "website", "index.html"))
+        cls.index_url = "file://%s" % path
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.driver.quit()
+        except:
+            pass
+
     def out(self, *args):
         print(*args, file=sys.stderr)
-    
+
     def _verbose_assertion_error(self, driver):
         self.out("\n")
         self.out("*" * 79)
@@ -32,49 +47,28 @@ class BaseSeleniumTestCase(unittest.TestCase):
         self.out("\n")
         raise
 
-
-
-class PyPyJSSeleniumTests(BaseSeleniumTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(PyPyJSSeleniumTests, cls).setUpClass()
-        cls.driver = webdriver.Firefox()
-        cls.driver.set_window_size(1024,768)
-        cls.driver.set_window_position(0,0)
-        path = posixpath.abspath(posixpath.join("..", "website", "index.html"))
-        cls.index_url = "file://%s" % path
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.driver.quit()
-        except:
-            pass
-
-    # def setUp(self):
-    #     self.driver = webdriver.Firefox()
-    #
-    #
-    # def tearDown(self):
-    #     self.driver.close()
-    def assertConsole(self, lines):
+    def assertConsole(self, *lines):
         console = self.driver.find_element_by_id("console")
         console_text = console.text
-        console_lines = [txt.strip() for txt in console_text.split("\n") if txt.strip()]
+        console_lines = tuple([
+            txt.strip()
+            for txt in console_text.split("\n")
+            if txt.strip()
+        ])
         self.assertEqual(console_lines, lines)
 
-    def test(self):
+
+class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
+    """
+    Tests that reload the page completely.
+    This will take relative long time :(
+    """
+
+    def setUp(self):
         self.driver.get(self.index_url)
         try:
             self.out("\nWait for console...")
-            self.assertIn("PyPy.js", self.driver.title)
-
-            check = WebDriverWait(self.driver, 10).until(
-                expected_conditions.presence_of_element_located(
-                    (By.CLASS_NAME, "jqconsole-output")
-                )
-            )
-            self.assertTrue(check)
+            self.assertEqual(self.driver.title, "PyPy.js")
 
             check = WebDriverWait(self.driver, 10).until(
                 expected_conditions.text_to_be_present_in_element(
@@ -82,44 +76,93 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
                 )
             )
             self.assertTrue(check)
-
-            self.assertConsole([
-                "Welcome to PyPy.js!",
-                ">>>",
-            ])
-
-            self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
-            self.assertConsole([
-                "Welcome to PyPy.js!",
-                "2.7.8 (?, Apr 09 2015, 15:06:24)",
-                "[PyPy 2.5.0]",
-                ">>>",
-            ])
-            return
-
-            # console=self.driver.find_element_by_id("console")
-            # console.click() # Set the focus to the console element
-            #
-            # console = self.driver.find_element_by_id("console")
-            # console.send_keys("import sys;print(sys.version)")
-            # console.send_keys(Keys.RETURN)
-            #
-            # check = WebDriverWait(self.driver, 2).until(
-            #     expected_conditions.text_to_be_present_in_element(
-            #         (By.ID, "console"), ">>> foo bar"
-            #     )
-            # )
-            # # self.driver.implicitly_wait(5)
-            # self.assertConsole([
-            #     "Welcome to PyPy.js!",
-            #     ">>> foo bar",
-            # ])
-
         except Exception:
             self._verbose_assertion_error(self.driver)
 
+    def test(self):
+        self.driver.get(self.index_url)
+        self.assertConsole(
+            "Welcome to PyPy.js!",
+            ">>>",
+        )
 
+        self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
+        self.assertConsole(
+            "Welcome to PyPy.js!",
+            "2.7.8 (?, Apr 09 2015, 15:06:24)",
+            "[PyPy 2.5.0]",
+            ">>>",
+        )
+
+
+class PyPyJSSeleniumTests(BaseSeleniumTestCase):
+    """
+    Request and init PyPyJS in setUpClass
+    and no complete reload before every tests
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(PyPyJSSeleniumTests, cls).setUpClass()
+        cls.driver.get(cls.index_url)
+
+        cls.out("\nWait for init...")
+        assert "PyPy.js" == cls.driver.title
+
+        check = WebDriverWait(cls.driver, 10).until(
+            expected_conditions.text_to_be_present_in_element(
+                (By.ID, "console"), ">>>"
+            )
+        )
+        assert check
+
+    def setUp(self):
+        self.driver.execute_script('jqconsole.Reset()')
+        self.assertConsole()  # is empty?
+
+    def _execute(self, *args):
+        for arg in args:
+            self.driver.execute_script('vm.eval("%s")' % arg)
+
+    def test_sys_version(self):
+        self._execute(
+            "import sys",
+            "print(sys.version)"
+        )
+        self.assertConsole(
+            "2.7.8 (?, Apr 09 2015, 15:06:24)",
+            "[PyPy 2.5.0]",
+        )
+
+    def test_sys_platform(self):
+        """
+        https://github.com/rfk/pypyjs/issues/49
+        """
+        self._execute(
+            "import sys",
+            "print(sys.platform)"
+        )
+        self.assertConsole("js")
+
+    def test_name(self):
+        self._execute(
+            "print(__name__)"
+        )
+        self.assertConsole('__main__')
+
+    def test_pickle(self):
+        """
+        https://github.com/rfk/pypyjs/issues/83
+        """
+        self._execute(
+            "import pickle",
+            "print(pickle.loads(pickle.dumps({'a': 'a'})))"
+        )
+        self.assertConsole("{'a': 'a'}")
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(
+        verbosity=3,
+        # failfast=True
+    )
