@@ -171,6 +171,14 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         )
         self.assertConsole("{'a': 'a'}")
 
+    def test_js_module(self):
+        self._execute(
+            "import js",
+            "math = js.globals.Math",
+            "print(math.log(2))"
+        )
+        self.assertConsole("0.6931471805599453")
+
 
 if __name__ == "__main__":
     unittest.main(
