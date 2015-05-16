@@ -1,4 +1,3 @@
-
 """
     Quick HowTo setup a test environment and run this file:
 
@@ -13,8 +12,9 @@
 
 
 """
-
+import difflib
 import posixpath
+import textwrap
 import traceback
 import unittest
 import sys
@@ -23,6 +23,18 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
+
+
+def make_diff(block1, block2):
+    d = difflib.Differ()
+
+    block1 = block1.replace("\\n", "\\n\n").split("\n")
+    block2 = block2.replace("\\n", "\\n\n").split("\n")
+
+    diff = d.compare(block1, block2)
+
+    result = ["%2s %s\n" % (line, i) for line, i in enumerate(diff)]
+    return "".join(result)
 
 
 class BaseSeleniumTestCase(unittest.TestCase):
@@ -63,15 +75,26 @@ class BaseSeleniumTestCase(unittest.TestCase):
         self.out("\n")
         raise
 
-    def assertConsole(self, *lines):
+    def assertConsole(self, txt):
         console = self.driver.find_element_by_id("console")
         console_text = console.text
-        console_lines = tuple([
-            txt.strip()
-            for txt in console_text.split("\n")
-            if txt.strip()
-        ])
-        self.assertEqual(console_lines, lines)
+        console_text = console_text.strip()
+
+        txt = textwrap.dedent(txt).strip()
+        msg = textwrap.dedent("""
+
+            *** Console output is: ***
+            %s
+
+            *** the reference: ***
+            %s
+
+            *** diff: ***
+            %s
+        """) % (
+            console_text, txt, make_diff(console_text, txt)
+        )
+        self.assertEqual(console_text, txt, msg=msg)
 
 
 class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
@@ -99,10 +122,10 @@ class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
 
     def test(self):
         self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
-        self.assertConsole(
-            "2.7.8 (?, Apr 09 2015, 15:06:24)",
-            "[PyPy 2.5.0]",
-        )
+        self.assertConsole("""
+            2.7.8 (?, Apr 09 2015, 15:06:24)
+            [PyPy 2.5.0]
+        """)
 
 
 class PyPyJSSeleniumTests(BaseSeleniumTestCase):
