@@ -1,3 +1,19 @@
+
+"""
+    Quick HowTo setup a test environment and run this file:
+
+    ~ $ virtualenv pypyjs_env
+    ~ $ cd pypyjs_env/
+    ~/pypyjs_env $ source bin/activate
+    (pypyjs_env)~/pypyjs_env $ pip install --upgrade pip
+    (pypyjs_env)~/pypyjs_env $ pip install selenium
+    (pypyjs_env)~/pypyjs_env $ pip install -e git+https://github.com/rfk/pypyjs.git#egg=pypyjs
+    (pypyjs_env)~/pypyjs_env $ cd src/pypyjs/tests
+    (pypyjs_env)~/pypyjs_env/src/pypyjs/tests$ python selenium_tests.py
+
+
+"""
+
 import posixpath
 import traceback
 import unittest
