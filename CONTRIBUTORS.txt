@@ -9,3 +9,4 @@ make their contributions available under the terms of the project license:
 * Min RK
 * Anthony Sottile <asottile@umich.edu>
 * Logan Perkins <perkins@injeanieousdesigns.com>
+* Jens Diemer <python@jensdiemer.de>
