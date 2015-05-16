@@ -91,7 +91,9 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 	# Cromulate for better compressibility, unless it's a debug build.
 	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypy.vm.js ; fi
 	# Copy the supporting JS library code.
-	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise.min.js $(RELDIR)/lib/
+	cp ./lib/pypy.js ./lib/README.txt ./lib/Promise*.js $(RELDIR)/lib/
+	cp -r ./lib/tests $(RELDIR)/lib/tests
+	# Create an indexed stdlib distribution.
 	python tools/module_bundler.py init $(RELDIR)/lib/modules/
 	# Copy tools for managing the distribution.
 	mkdir -p $(RELDIR)/tools
