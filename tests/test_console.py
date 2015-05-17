@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
     Quick HowTo setup a test environment and run this file:
 
@@ -7,11 +9,13 @@
     (pypyjs_env)~/pypyjs_env $ pip install --upgrade pip
     (pypyjs_env)~/pypyjs_env $ pip install selenium
     (pypyjs_env)~/pypyjs_env $ pip install -e git+https://github.com/rfk/pypyjs.git#egg=pypyjs
-    (pypyjs_env)~/pypyjs_env $ cd src/pypyjs/tests
-    (pypyjs_env)~/pypyjs_env/src/pypyjs/tests$ python selenium_tests.py
-
+    (pypyjs_env)~/pypyjs_env $ cd src/pypyjs/
+    (pypyjs_env)~/pypyjs_env/src/pypyjs$ ./runtests.py
 
 """
+
+from __future__ import absolute_import, print_function
+
 import difflib
 import os
 import posixpath
@@ -39,6 +43,12 @@ def make_diff(block1, block2):
     return "".join(result)
 
 
+def website_path(sub_path):
+    path = posixpath.abspath(posixpath.join(os.path.dirname(__file__), "..", "website", sub_path))
+    assert os.path.exists(path), "path %r doesn't exists!" % path
+    return path
+
+
 class BaseSeleniumTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -46,7 +56,7 @@ class BaseSeleniumTestCase(unittest.TestCase):
         cls.driver = webdriver.Firefox()
         cls.driver.set_window_size(1024, 768)
         cls.driver.set_window_position(0, 0)
-        path = posixpath.abspath(posixpath.join("..", "website", "index.html"))
+        path = website_path("index.html")
         cls.index_url = "file://%s" % path
 
     @classmethod
@@ -392,7 +402,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     def test_imports(self):
 
         # hack a list of available modules:
-        libpath = os.path.abspath(os.path.join("..", "website/js/pypy.js-0.3.0/lib/modules"))
+        libpath = website_path("js/pypy.js-0.3.0/lib/modules")
         module_names = [
             os.path.splitext(item)[0]
             for item in sorted(os.listdir(libpath))
@@ -401,6 +411,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
 
         good = failed = 0
         total_count = len(module_names)
+        self.out("\nTry to import %i modules:" % total_count)
         for no, module_name in enumerate(sorted(module_names)):
             python_script = """
                 try:
@@ -419,7 +430,10 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
                 failed += 1
             else:
                 self.fail(msg=response)
-            self.out("%i/%i: %s" % (no, total_count, response))
+            self.out("\t%i/%i: %s" % (no, total_count, response))
+
+            if failed >= 10:
+                self.fail("import test failed more than 10 times. Abort the test.")
 
         self.assertEqual(failed, 0)
 
