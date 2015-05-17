@@ -595,12 +595,18 @@ PyPyJS.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
     // Prompt for input, which may happen via async promise.
     return prmpt.call(this, ps1);
   }).bind(this)).then((function(input) {
-    // Push it into the InteractiveConsole.
-    var code = input.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    code = 'r = c.push(\'' + code + '\')';
-    return this.eval(code);
+    // Push it into the InteractiveConsole, a line at a time.
+    var p = Promise.resolve();
+    input.split("\n").forEach((function(line) {
+      var code = line.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      code = 'r = c.push(\'' + code + '\')';
+      p = p.then((function() {
+        return this.eval(code);
+      }).bind(this));
+    }).bind(this));
+    return p;
   }).bind(this)).then((function() {
-    // Check the result from that call.
+    // Check the result from the final push.
     return vm.get('r')
   }).bind(this)).then((function(r) {
     // If r == 1, we're in a multi-line definition.
