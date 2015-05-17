@@ -306,7 +306,12 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """)
 
     def test_name(self):
-        self.assertExecution("print(__name__)", "__main__")
+        """
+        https://github.com/rfk/pypyjs/issues/104
+        vm._execute_source("print __name__") -> __builtin__
+        vm.exec("print __name__") -> __main__
+        """
+        self.assertExecution("print __name__ ", "__main__")
 
     def test_pickle(self):
         """
