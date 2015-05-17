@@ -349,13 +349,25 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
             {'a': 'a'}
         """)
 
-    def test_js_module(self):
+    def test_js_module1(self):
         self.assertExecution("""
             import js
             math = js.globals.Math
             print(math.log(2))
         """, """
             0.6931471805599453
+        """)
+
+    def test_js_module2(self):
+        """
+        https://github.com/rfk/pypyjs/issues/56
+        """
+        self.assertExecution("""
+            import js
+            js.eval('var one = 1')
+            js.eval('one')
+        """, """
+            <js.Number 1.000000>
         """)
 
     def test_module_random(self):
