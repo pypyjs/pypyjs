@@ -87,6 +87,19 @@ var PyPyJSTestResult = vm.ready
   return vm.exec("import sys; assert sys.platform == 'js'");
 })
 
+// Check that multi-line exec will work correctly.
+.then(function() {
+  return vm.exec("x = 2\ny = x * 3");
+})
+.then(function() {
+  return vm.get("y")
+})
+.then(function(y) {
+  if (y !== 6) {
+    throw new Error("multi-line exec didn't work");
+  }
+})
+
 // Report success or failure at the end of the chain.
 .then(function(res) {
   log("TESTS PASSED!");
