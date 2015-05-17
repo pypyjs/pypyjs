@@ -13,6 +13,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import unittest
+import sys
 
 if __name__ == "__main__":
     loader = unittest.TestLoader()
@@ -20,5 +21,9 @@ if __name__ == "__main__":
     this_dir = os.path.join(os.path.dirname(__file__), "tests")
     suite = loader.discover(this_dir)
 
-    runner = unittest.TextTestRunner(verbosity=2)
+    runner = unittest.TextTestRunner(
+        verbosity=2,
+        # failfast=True,
+    )
     result = runner.run(suite)
+    sys.exit(len(result.errors) + len(result.failures))
