@@ -28,9 +28,16 @@ import argparse
 import shutil
 
 
+def _u(path):
+    """Convert filesystem path to unicode."""
+    if not isinstance(path, unicode):
+        path = path.decode(sys.getfilesystemencoding())
+    return path
+
+
 # The root of our pypy source checkout, if it exists.
 PYPY_ROOT = os.path.join(
-    os.path.dirname(__file__),
+    os.path.dirname(_u(__file__)),
     "../deps/pypy",
 )
 
@@ -198,7 +205,7 @@ def main(argv):
                                help="delete the modules out of the bundle_dir, instead of just de-listing them")
     
     opts = parser.parse_args(argv[1:])
-    bundler = ModuleBundle(opts.bundle_dir)
+    bundler = ModuleBundle(_u(opts.bundle_dir))
     if opts.subcommand == "init":
         cmd_init(bundler, opts)
     elif opts.subcommand == "add":
@@ -225,9 +232,9 @@ def cmd_init(bundler, opts):
     # Walk the pypy stdlib dirs to find all available module files and
     # copy them into the bundle.
     if opts.pypy_root:
-        pypy_root = opts.pypy_root
+        pypy_root = _u(opts.pypy_root)
     else:
-        pypy_root = PYPY_ROOT
+        pypy_root = _u(PYPY_ROOT)
     for modroot in ("lib-python/2.7", "lib_pypy"):
         rootdir = os.path.join(pypy_root, modroot)
         bundler.bundle_directory(rootdir)
@@ -429,6 +436,7 @@ class ModuleBundle(object):
         """Bundle all modules/packages in the given directory."""
         dirpath = os.path.abspath(dirpath)
         for nm in os.listdir(dirpath):
+            nm = _u(nm)
             if nm.startswith("."):
                 continue
             itempath = os.path.join(dirpath, nm)
@@ -493,6 +501,7 @@ class ModuleBundle(object):
             self._modules_pending_import_analysis.append(subpackage)
             # Recursively gather all its contents.
             for nm in os.listdir(abspath):
+                nm = _u(nm)
                 if nm.startswith("."):
                     continue
                 subrelpath = os.path.join(relpath, nm)
