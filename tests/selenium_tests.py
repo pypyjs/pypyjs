@@ -21,6 +21,7 @@ import unittest
 import sys
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
@@ -172,20 +173,34 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         )
         run_element = self.driver.find_element_by_id("selenium_vm_run")
 
-        script = (
-            "vm.exec('%s').then(function() {"
-            "$( '#selenium_vm_run' ).remove();"
-            "});"
+        script2 = (
+            "function selenium_vm_run_done() {$( '#selenium_vm_run' ).remove();}"
+            # "vm.exec('%s').then(selenium_vm_run_done, selenium_vm_run_done);"
+            "vm._execute_source('%s').then(selenium_vm_run_done, selenium_vm_run_done);"
         ) % script
 
-        self.out('\nExecute script: %s' % script)
-        self.driver.execute_script(script)
+        # self.out('\nExecute script: %s' % script)
+        self.driver.execute_script(script2)
 
         # Wait that vm.eval() is really finished: The added DOM element will be remove
-        check = WebDriverWait(self.driver, timeout).until(
-            expected_conditions.staleness_of(run_element)
-        )
-        self.assertTrue(check)
+        try:
+            check = WebDriverWait(self.driver, timeout).until(
+                expected_conditions.staleness_of(run_element)
+            )
+        except TimeoutException:
+            msg=(
+                "Timeout reached while execution of:\n"
+                "-----------------------------------\n"
+                "%s\n"
+                "-----------------------------------\n"
+                "Console output:\n"
+                "-----------------------------------\n"
+                "%s\n"
+                "-----------------------------------\n"
+            ) % (script, self._get_console_text())
+            self.fail(msg=msg)
+        else:
+            self.assertTrue(check)
 
     def assertExecution(self, python_script, console_output, timeout=10):
         self._execute_code(python_script, timeout)
