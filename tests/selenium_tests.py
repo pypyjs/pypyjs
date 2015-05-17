@@ -128,7 +128,7 @@ class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
     def test(self):
         self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
         self.assertConsole("""
-            2.7.8 (?, Apr 09 2015, 15:06:24)
+            2.7.8 (?, May 17 2015, 07:02:41)
             [PyPy 2.5.0]
         """)
 
@@ -173,12 +173,12 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         run_element = self.driver.find_element_by_id("selenium_vm_run")
 
         script = (
-            "vm.eval('%s\\n').then(function() {"
+            "vm.exec('%s').then(function() {"
             "$( '#selenium_vm_run' ).remove();"
             "});"
         ) % script
 
-        # self.out('\nExecute script: %r' % script)
+        self.out('\nExecute script: %s' % script)
         self.driver.execute_script(script)
 
         # Wait that vm.eval() is really finished: The added DOM element will be remove
@@ -193,23 +193,58 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
 
     def test_execute_escaping(self):
         self.assertExecution("""
-            print "one"
-            print 'two'
-            print
-            print "foo\\nbar"
-            print "\\nOK\\nisn't it?"
+            print 'single quote'
         """, """
-            one
-            two
+            single quote
+        """)
 
-            foo
-            bar
+        self.clear_console()
+        self.assertExecution("""
+            print "double quote"
+        """, """
+            double quote
+        """)
 
+        self.clear_console()
+        self.assertExecution("""
+            print "a 'single quote' in double quote"
+        """, """
+            a 'single quote' in double quote
+        """)
+
+        self.clear_console()
+        self.assertExecution("""
+            print 'a "double quote" in single quote'
+        """, """
+            a "double quote" in single quote
+        """)
+
+        self.clear_console()
+        self.assertExecution("""
+            print "a\\nnew line"
+        """, """
+            a
+            new line
+        """)
+
+        self.clear_console()
+        self.assertExecution("""
+            print "OK\\nisn't it?"
+        """, """
             OK
             isn't it?
         """)
 
     def test_execute_multiline(self):
+        self.assertExecution("""
+            print "one"
+            print "two"
+        """, """
+            one
+            two
+        """)
+
+        self.clear_console()
         self.assertExecution("""
             for i in range(2):
                 print i
@@ -226,7 +261,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
             import sys
             print sys.version
         """, """
-            2.7.8 (?, Apr 09 2015, 15:06:24)
+            2.7.8 (?, May 17 2015, 07:02:41)
             [PyPy 2.5.0]
         """)
 
@@ -337,7 +372,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     def test_imports(self):
 
         # hack a list of available modules:
-        libpath = os.path.abspath(os.path.join("..", "website/js/pypy.js-0.2.0/lib/modules"))
+        libpath = os.path.abspath(os.path.join("..", "website/js/pypy.js-0.3.0/lib/modules"))
         module_names = [
             os.path.splitext(item)[0]
             for item in sorted(os.listdir(libpath))
