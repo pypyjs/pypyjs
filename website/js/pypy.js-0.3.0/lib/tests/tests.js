@@ -28,13 +28,16 @@ var PyPyJSTestResult = vm.ready
 
 // First, check that python-level errors will actually fail the tests.
 .then(function() {
-  return vm.exec("raise RuntimeError");
+  return vm.exec("raise ValueError(42)");
 })
 .then(function() {
   throw new Error("Python exception did not trigger js Error");
 }, function(err) {
   if (! err instanceof PyPyJS.Error) {
     throw new Error("Python exception didn't trigger PyPyJS.Error instance");
+  }
+  if (err.name !== "ValueError" || err.message !== "42") {
+    throw new Error("Python exception didn't trigger correct error info");
   }
 })
 
@@ -61,6 +64,16 @@ var PyPyJSTestResult = vm.ready
 .then(function(x) {
   if (x !== 15) {
     throw new Error("eval failed");
+  }
+})
+
+// Check that we can read non-existent names and get 'undefined'
+.then(function() {
+  return vm.get("nonExistentName")
+})
+.then(function(x) {
+  if (typeof x !== "undefined") {
+    throw new Error("name should have been undefined");
   }
 })
 
