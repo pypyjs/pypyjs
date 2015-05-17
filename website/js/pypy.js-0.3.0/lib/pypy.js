@@ -547,6 +547,73 @@ PyPyJS.prototype.set = function set(name, value) {
 }
 
 
+// Method to run an interactive REPL.
+//
+// This method takes takes callback function implementing the user
+// input prompt, and runs a REPL loop using it.  The prompt function
+// may either return the input as a string, or a promise resolving to
+// the input as a string.  If not specified, we read from stdin (which
+// works fine in e.g. nodejs, but is almost certainly not what you want
+// in the browser, because it's blocking).
+//
+PyPyJS.prototype.repl = function repl(prmpt) {
+  // Read from stdin if no prompt function is provided.
+  if (!prmpt) {
+    var buffer = "";
+    prmpt = (function(ps1) {
+      var input;
+      this.stdout(ps1);
+      var c = this.stdin();
+      while (c) {
+        var idx = c.indexOf("\n");
+        if (idx >= 0) {
+          var input = buffer + c.substr(0, idx + 1);
+          buffer = c.substr(idx + 1);
+          return input;
+        }
+        c = this.stdin();
+      }
+      input = buffer;
+      buffer = "";
+      return input;
+    }).bind(this);
+  }
+  // Set up an InteractiveConsole instance,
+  // then loop forever via recursive promises.
+  return this.ready.then((function() {
+    return this.eval("import code");
+  }).bind(this)).then((function() {
+    return this.eval("c = code.InteractiveConsole()");
+  }).bind(this)).then((function() {
+    return this._repl_loop(prmpt, ">>> ");
+  }).bind(this));
+}
+
+
+PyPyJS.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
+  return Promise.resolve().then((function() {
+    // Prompt for input, which may happen via async promise.
+    return prmpt.call(this, ps1);
+  }).bind(this)).then((function(input) {
+    // Push it into the InteractiveConsole.
+    var code = input.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    code = 'r = c.push(\'' + code + '\')';
+    return this.eval(code);
+  }).bind(this)).then((function() {
+    // Check the result from that call.
+    return vm.get('r')
+  }).bind(this)).then((function(r) {
+    // If r == 1, we're in a multi-line definition.
+    // Adjust the prompt accordingly.
+    if (r) {
+      return this._repl_loop(prmpt, "... ");
+    } else {
+      return this._repl_loop(prmpt, ">>> ");
+    }
+  }).bind(this));
+}
+
+
 // Method to look for "import" statements in a code string.
 // Returns a promise that will resolve to a list of imported module names.
 //
