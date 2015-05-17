@@ -581,7 +581,7 @@ PyPyJS.prototype.repl = function repl(prmpt) {
   // Set up an InteractiveConsole instance,
   // then loop forever via recursive promises.
   return this.ready.then((function() {
-    return this.eval("import code");
+    return this.eval("import code, site");
   }).bind(this)).then((function() {
     return this.eval("c = code.InteractiveConsole()");
   }).bind(this)).then((function() {
