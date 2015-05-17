@@ -453,6 +453,11 @@ PyPyJS.prototype._execute_source = function _execute_source(code) {
 }
 
 
+function _escape(value) {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+
 // Method to execute some python code.
 //
 // This passes the given python code to the VM for execution.
@@ -474,8 +479,7 @@ PyPyJS.prototype.exec = function exec(code) {
       }).bind(this))
     }
     // Now we can execute the code in custom top-level scope.
-    code = code.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    code = 'exec \'' + code + '\' in top_level_scope';
+    code = 'exec \'' + _escape(code) + '\' in top_level_scope';
     p = p.then((function() {
       return this._execute_source(code);
     }).bind(this));
@@ -484,11 +488,35 @@ PyPyJS.prototype.exec = function exec(code) {
 }
 
 
-// For backwards compatibility.
-
-PyPyJS.prototype.eval = PyPyJS.prototype.exec
-
-
+// Method to evaluate an expression.
+//
+// This method evaluates an expression and returns its value (assuming the
+// value can be translated into javascript).  It's fairly directly analogous
+// to the "eval" function in python.
+//
+// For backwards-compatibility reasons, it will also evaluate statements.
+// This behaviour is deprecated and will be removed in a future release.
+//
+PyPyJS.prototype.eval = function eval(code) {
+  return this.ready.then((function() {
+    // First try to execute it as an expression.
+    code = "r = eval('" + _escape(code) + "', top_level_scope)";
+    return this._execute_source(code);
+  }).bind(this)).then(
+    (function() {
+      // If that succeeded, return the result.
+      return this.get("r", true)
+    }).bind(this),
+    (function(err) {
+      // If that failed, try again via exec().
+      if (typeof console !== "undefined") {
+        console.warn("Calling PyPyJS.eval() with statements is deprecated.");
+        console.warn("Use eval() for expressions, exec() for statements.");
+      }
+      return this.exec(code);
+    }).bind(this)
+  )
+}
 
 // Method to evaluate some python code from a file..
 //
@@ -519,8 +547,7 @@ PyPyJS.prototype.get = function get(name, _fromGlobals) {
     var namespace = "top_level_scope";
   }
   return this.ready.then((function() {
-    name = name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    var code = namespace + "['" + name + "']";
+    var code = namespace + "['" + _escape(name) + "']";
     code = "js.convert(" + code + ")"
     code = "js.globals['PyPyJS']._resultsMap['" + resid + "'] = " + code;
     return this._execute_source(code);
@@ -541,7 +568,7 @@ PyPyJS.prototype.set = function set(name, value) {
   return this.ready.then((function() {
     var Module = this._module;
     var h = Module._emjs_make_handle(value);
-    name = name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    name = _escape(name);
     var code = "top_level_scope['" + name + "'] = js.Value(" + h + ")";
     return this._execute_source(code);
   }).bind(this));
@@ -601,8 +628,7 @@ PyPyJS.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
     // Push it into the InteractiveConsole, a line at a time.
     var p = Promise.resolve();
     input.split("\n").forEach((function(line) {
-      var code = line.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-      code = 'r = c.push(\'' + code + '\')';
+      var code = 'r = c.push(\'' + _escape(line) + '\')';
       p = p.then((function() {
         return this._execute_source(code);
       }).bind(this));

@@ -79,15 +79,27 @@ objects.
 The following example evaluates a simple arithmetic expression via Python::
 
     function pyDouble(x) {
-      vm.set('x', x).then(function() {
-        return vm.exec('x = x * 2');
+      return vm.ready.then(function() {
+        return vm.set('x', x)  // copes the value of 'x' into python
       }).then(function() {
-        return vm.get('x')
+        return vm.exec('x = x * 2');  // doubles the value in 'x' in python
+      }).then(function() {
+        return vm.get('x')  // copies the value in 'x' out to javascript
       });
     }
 
     pyDouble(12).then(function(result) {
       console.log(result);  // prints '24'
+    });
+
+
+There is also an `eval()` function that evaluates expessions in the global
+scope, similar to python's `eval()`::
+
+    vm.set('x', 7).then(function() {
+      return vm.eval('x * 3');  // evaluates and copies result to javascript
+    }).then(function(x) {
+      console.log(x);  // prints '21'
     });
 
 
@@ -98,7 +110,32 @@ fetch it and pass it to the interpreter for execution::
 
 
 If you'd like to simulate an interactive python console, the helper method
-`repl()` can be used to enter an interactive loop.  It takes 
+`repl()` can be used to enter an interactive loop.  It takes a callback to
+use as the input prompt, which it will call repeatedly to interact with the
+user in a loop.  Here's an example using the jqConsole widget for input and
+output::
+
+    // Initialize the widget.
+    var terminal = $('#terminal').jqconsole('', '>>> ');
+
+    // Hook up output streams to write to the console.
+    vm.stdout = vm.stderr = function(data) {
+      terminal.Write(data, 'jqconsole-output');
+    }
+
+    // Interact by taking input from the console prompt.
+    vm.repl(function(ps1) {
+
+      // The argument is ">>> " or "... " depending on REPL state.
+      jqconsole.SetPromptLabel(ps1);
+
+      // Return a promise if prompting for input asynchronously.
+      return new Promise(function(resolve, reject) {
+        jqconsole.Prompt(true, function (input) {
+          resolve(input);
+        });
+      });
+    });
 
 
 
