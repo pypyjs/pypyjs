@@ -53,7 +53,9 @@
     "hotshot", 
     "sunau", 
     "sunaudio", 
-    "wave"
+    "wave", 
+    "sqlite3", 
+    "curses"
   ], 
   "missing": {
     "EasyDialogs.AskPassword": [
@@ -514,7 +516,6 @@
       "distutils.tests.test_archive_util", 
       "encodings.zlib_codec", 
       "gzip", 
-      "sqlite3.test.types", 
       "tarfile", 
       "test.test_zipimport", 
       "test.test_zipfile64", 

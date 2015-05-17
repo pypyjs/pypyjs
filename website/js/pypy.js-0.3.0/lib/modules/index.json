@@ -409,7 +409,7 @@
         "collections", 
         "functools", 
         "os", 
-        "sqlite3.dump", 
+        "sqlite3.dump._iterdump", 
         "string", 
         "sys", 
         "threading._get_ident", 
@@ -1000,49 +1000,6 @@
         "ctypes_configure.configure.ExternalCompilationInfo", 
         "ctypes_configure.configure.SimpleType", 
         "ctypes_configure.configure.configure"
-      ]
-    }, 
-    "curses": {
-      "dir": "curses"
-    }, 
-    "curses.__init__": {
-      "file": "curses/__init__.py", 
-      "imports": [
-        "curses", 
-        "curses.has_key", 
-        "curses.wrapper", 
-        "sys", 
-        "os", 
-        "_curses"
-      ]
-    }, 
-    "curses.ascii": {
-      "file": "curses/ascii.py", 
-      "imports": []
-    }, 
-    "curses.has_key": {
-      "file": "curses/has_key.py", 
-      "imports": [
-        "_curses"
-      ]
-    }, 
-    "curses.panel": {
-      "file": "curses/panel.py", 
-      "imports": [
-        "_curses_panel"
-      ]
-    }, 
-    "curses.textpad": {
-      "file": "curses/textpad.py", 
-      "imports": [
-        "curses", 
-        "curses.ascii"
-      ]
-    }, 
-    "curses.wrapper": {
-      "file": "curses/wrapper.py", 
-      "imports": [
-        "curses"
       ]
     }, 
     "datetime": {
@@ -5810,108 +5767,6 @@
         "sys", 
         "StringIO", 
         "warnings"
-      ]
-    }, 
-    "sqlite3": {
-      "dir": "sqlite3"
-    }, 
-    "sqlite3.__init__": {
-      "file": "sqlite3/__init__.py", 
-      "imports": [
-        "sqlite3.dbapi2"
-      ]
-    }, 
-    "sqlite3.dbapi2": {
-      "file": "sqlite3/dbapi2.py", 
-      "imports": [
-        "collections", 
-        "time", 
-        "_sqlite3", 
-        "datetime"
-      ]
-    }, 
-    "sqlite3.dump": {
-      "file": "sqlite3/dump.py", 
-      "imports": []
-    }, 
-    "sqlite3.test": {
-      "dir": "sqlite3/test"
-    }, 
-    "sqlite3.test.__init__": {
-      "file": "sqlite3/test/__init__.py", 
-      "imports": []
-    }, 
-    "sqlite3.test.dbapi": {
-      "file": "sqlite3/test/dbapi.py", 
-      "imports": [
-        "sqlite3", 
-        "sys", 
-        "threading", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.dump": {
-      "file": "sqlite3/test/dump.py", 
-      "imports": [
-        "sqlite3", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.factory": {
-      "file": "sqlite3/test/factory.py", 
-      "imports": [
-        "collections", 
-        "sqlite3", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.hooks": {
-      "file": "sqlite3/test/hooks.py", 
-      "imports": [
-        "os", 
-        "sqlite3", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.py25tests": {
-      "file": "sqlite3/test/py25tests.py", 
-      "imports": [
-        "__future__", 
-        "sqlite3", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.regression": {
-      "file": "sqlite3/test/regression.py", 
-      "imports": [
-        "sqlite3", 
-        "unittest", 
-        "datetime"
-      ]
-    }, 
-    "sqlite3.test.transactions": {
-      "file": "sqlite3/test/transactions.py", 
-      "imports": [
-        "os", 
-        "sqlite3", 
-        "sys", 
-        "unittest"
-      ]
-    }, 
-    "sqlite3.test.types": {
-      "file": "sqlite3/test/types.py", 
-      "imports": [
-        "sqlite3", 
-        "zlib", 
-        "unittest", 
-        "datetime"
-      ]
-    }, 
-    "sqlite3.test.userfunctions": {
-      "file": "sqlite3/test/userfunctions.py", 
-      "imports": [
-        "sqlite3", 
-        "unittest"
       ]
     }, 
     "sre": {
@@ -12107,6 +11962,7 @@
     "encodings.hex_codec": "\"\"\" Python 'hex_codec' Codec - 2-digit hex content transfer encoding\n\n    Unlike most of the other codecs which target Unicode, this codec\n    will return Python string objects for both encode and decode.\n\n    Written by Marc-Andre Lemburg (mal@lemburg.com).\n\n\"\"\"\nimport codecs, binascii\n\n### Codec APIs\n\ndef hex_encode(input,errors='strict'):\n\n    \"\"\" Encodes the object input and returns a tuple (output\n        object, length consumed).\n\n        errors defines the error handling to apply. It defaults to\n        'strict' handling which is the only currently supported\n        error handling for this codec.\n\n    \"\"\"\n    assert errors == 'strict'\n    output = binascii.b2a_hex(input)\n    return (output, len(input))\n\ndef hex_decode(input,errors='strict'):\n\n    \"\"\" Decodes the object input and returns a tuple (output\n        object, length consumed).\n\n        input must be an object which provides the bf_getreadbuf\n        buffer slot. Python strings, buffer objects and memory\n        mapped files are examples of objects providing this slot.\n\n        errors defines the error handling to apply. It defaults to\n        'strict' handling which is the only currently supported\n        error handling for this codec.\n\n    \"\"\"\n    assert errors == 'strict'\n    output = binascii.a2b_hex(input)\n    return (output, len(input))\n\nclass Codec(codecs.Codec):\n\n    def encode(self, input,errors='strict'):\n        return hex_encode(input,errors)\n    def decode(self, input,errors='strict'):\n        return hex_decode(input,errors)\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        assert self.errors == 'strict'\n        return binascii.b2a_hex(input)\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        assert self.errors == 'strict'\n        return binascii.a2b_hex(input)\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='hex',\n        encode=hex_encode,\n        decode=hex_decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamwriter=StreamWriter,\n        streamreader=StreamReader,\n    )\n", 
     "encodings.latin_1": "\"\"\" Python 'latin-1' Codec\n\n\nWritten by Marc-Andre Lemburg (mal@lemburg.com).\n\n(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.\n\n\"\"\"\nimport codecs\n\n### Codec APIs\n\nclass Codec(codecs.Codec):\n\n    # Note: Binding these as C functions will result in the class not\n    # converting them to methods. This is intended.\n    encode = codecs.latin_1_encode\n    decode = codecs.latin_1_decode\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.latin_1_encode(input,self.errors)[0]\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.latin_1_decode(input,self.errors)[0]\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\nclass StreamConverter(StreamWriter,StreamReader):\n\n    encode = codecs.latin_1_decode\n    decode = codecs.latin_1_encode\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='iso8859-1',\n        encode=Codec.encode,\n        decode=Codec.decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamreader=StreamReader,\n        streamwriter=StreamWriter,\n    )\n", 
     "encodings.raw_unicode_escape": "\"\"\" Python 'raw-unicode-escape' Codec\n\n\nWritten by Marc-Andre Lemburg (mal@lemburg.com).\n\n(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.\n\n\"\"\"\nimport codecs\n\n### Codec APIs\n\nclass Codec(codecs.Codec):\n\n    # Note: Binding these as C functions will result in the class not\n    # converting them to methods. This is intended.\n    encode = codecs.raw_unicode_escape_encode\n    decode = codecs.raw_unicode_escape_decode\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.raw_unicode_escape_encode(input, self.errors)[0]\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.raw_unicode_escape_decode(input, self.errors)[0]\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='raw-unicode-escape',\n        encode=Codec.encode,\n        decode=Codec.decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamwriter=StreamWriter,\n        streamreader=StreamReader,\n    )\n", 
+    "encodings.string_escape": "# -*- coding: utf-8 -*-\n\"\"\" Python 'escape' Codec\n\n\nWritten by Martin v. L\u00f6wis (martin@v.loewis.de).\n\n\"\"\"\nimport codecs\n\nclass Codec(codecs.Codec):\n\n    encode = codecs.escape_encode\n    decode = codecs.escape_decode\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.escape_encode(input, self.errors)[0]\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.escape_decode(input, self.errors)[0]\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='string-escape',\n        encode=Codec.encode,\n        decode=Codec.decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamwriter=StreamWriter,\n        streamreader=StreamReader,\n    )\n", 
     "encodings.unicode_escape": "\"\"\" Python 'unicode-escape' Codec\n\n\nWritten by Marc-Andre Lemburg (mal@lemburg.com).\n\n(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.\n\n\"\"\"\nimport codecs\n\n### Codec APIs\n\nclass Codec(codecs.Codec):\n\n    # Note: Binding these as C functions will result in the class not\n    # converting them to methods. This is intended.\n    encode = codecs.unicode_escape_encode\n    decode = codecs.unicode_escape_decode\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.unicode_escape_encode(input, self.errors)[0]\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.unicode_escape_decode(input, self.errors)[0]\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='unicode-escape',\n        encode=Codec.encode,\n        decode=Codec.decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamwriter=StreamWriter,\n        streamreader=StreamReader,\n    )\n", 
     "encodings.unicode_internal": "\"\"\" Python 'unicode-internal' Codec\n\n\nWritten by Marc-Andre Lemburg (mal@lemburg.com).\n\n(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.\n\n\"\"\"\nimport codecs\n\n### Codec APIs\n\nclass Codec(codecs.Codec):\n\n    # Note: Binding these as C functions will result in the class not\n    # converting them to methods. This is intended.\n    encode = codecs.unicode_internal_encode\n    decode = codecs.unicode_internal_decode\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.unicode_internal_encode(input, self.errors)[0]\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.unicode_internal_decode(input, self.errors)[0]\n\nclass StreamWriter(Codec,codecs.StreamWriter):\n    pass\n\nclass StreamReader(Codec,codecs.StreamReader):\n    pass\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='unicode-internal',\n        encode=Codec.encode,\n        decode=Codec.decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamwriter=StreamWriter,\n        streamreader=StreamReader,\n    )\n", 
     "encodings.utf_16": "\"\"\" Python 'utf-16' Codec\n\n\nWritten by Marc-Andre Lemburg (mal@lemburg.com).\n\n(c) Copyright CNRI, All Rights Reserved. NO WARRANTY.\n\n\"\"\"\nimport codecs, sys\n\n### Codec APIs\n\nencode = codecs.utf_16_encode\n\ndef decode(input, errors='strict'):\n    return codecs.utf_16_decode(input, errors, True)\n\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def __init__(self, errors='strict'):\n        codecs.IncrementalEncoder.__init__(self, errors)\n        self.encoder = None\n\n    def encode(self, input, final=False):\n        if self.encoder is None:\n            result = codecs.utf_16_encode(input, self.errors)[0]\n            if sys.byteorder == 'little':\n                self.encoder = codecs.utf_16_le_encode\n            else:\n                self.encoder = codecs.utf_16_be_encode\n            return result\n        return self.encoder(input, self.errors)[0]\n\n    def reset(self):\n        codecs.IncrementalEncoder.reset(self)\n        self.encoder = None\n\n    def getstate(self):\n        # state info we return to the caller:\n        # 0: stream is in natural order for this platform\n        # 2: endianness hasn't been determined yet\n        # (we're never writing in unnatural order)\n        return (2 if self.encoder is None else 0)\n\n    def setstate(self, state):\n        if state:\n            self.encoder = None\n        else:\n            if sys.byteorder == 'little':\n                self.encoder = codecs.utf_16_le_encode\n            else:\n                self.encoder = codecs.utf_16_be_encode\n\nclass IncrementalDecoder(codecs.BufferedIncrementalDecoder):\n    def __init__(self, errors='strict'):\n        codecs.BufferedIncrementalDecoder.__init__(self, errors)\n        self.decoder = None\n\n    def _buffer_decode(self, input, errors, final):\n        if self.decoder is None:\n            (output, consumed, byteorder) = \\\n                codecs.utf_16_ex_decode(input, errors, 0, final)\n            if byteorder == -1:\n                self.decoder = codecs.utf_16_le_decode\n            elif byteorder == 1:\n                self.decoder = codecs.utf_16_be_decode\n            elif consumed >= 2:\n                raise UnicodeError(\"UTF-16 stream does not start with BOM\")\n            return (output, consumed)\n        return self.decoder(input, self.errors, final)\n\n    def reset(self):\n        codecs.BufferedIncrementalDecoder.reset(self)\n        self.decoder = None\n\nclass StreamWriter(codecs.StreamWriter):\n    def __init__(self, stream, errors='strict'):\n        codecs.StreamWriter.__init__(self, stream, errors)\n        self.encoder = None\n\n    def reset(self):\n        codecs.StreamWriter.reset(self)\n        self.encoder = None\n\n    def encode(self, input, errors='strict'):\n        if self.encoder is None:\n            result = codecs.utf_16_encode(input, errors)\n            if sys.byteorder == 'little':\n                self.encoder = codecs.utf_16_le_encode\n            else:\n                self.encoder = codecs.utf_16_be_encode\n            return result\n        else:\n            return self.encoder(input, errors)\n\nclass StreamReader(codecs.StreamReader):\n\n    def reset(self):\n        codecs.StreamReader.reset(self)\n        try:\n            del self.decode\n        except AttributeError:\n            pass\n\n    def decode(self, input, errors='strict'):\n        (object, consumed, byteorder) = \\\n            codecs.utf_16_ex_decode(input, errors, 0, False)\n        if byteorder == -1:\n            self.decode = codecs.utf_16_le_decode\n        elif byteorder == 1:\n            self.decode = codecs.utf_16_be_decode\n        elif consumed>=2:\n            raise UnicodeError,\"UTF-16 stream does not start with BOM\"\n        return (object, consumed)\n\n### encodings module API\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name='utf-16',\n        encode=encode,\n        decode=decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamreader=StreamReader,\n        streamwriter=StreamWriter,\n    )\n", 

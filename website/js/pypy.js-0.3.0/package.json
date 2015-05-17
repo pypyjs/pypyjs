@@ -14,7 +14,7 @@
   "files": [
     "lib/",
     "tools/",
-    "README.rst",
+    "README.rst"
   ],
   "dependencies": {
   },

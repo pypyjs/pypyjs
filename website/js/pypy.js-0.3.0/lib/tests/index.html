@@ -1,0 +1,25 @@
+<html lang='en'>
+
+<head>
+  <title>PyPy.js Tests</title>
+</head>
+
+<body>
+
+  <div id="results">Testing...</div>
+
+  <script src="../Promise.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="../FunctionPromise.js" type="text/javascript" charset="utf-8"></script>
+  <script src="../pypy.js" type="text/javascript" charset="utf-8"></script>
+  <script src="./tests.js" type="text/javascript" charset="utf-8"></script>
+  <script>
+      PyPyJSTestResult.then(function() {
+        document.getElementById("results").innerHTML = "Tests passed";
+      }, function(err) {
+        document.getElementById("results").innerHTML = "Tests failed: " + err;
+      });
+  </script>
+
+</body>
+
+</html>
