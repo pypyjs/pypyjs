@@ -28,7 +28,7 @@ var PyPyJSTestResult = vm.ready
 
 // First, check that python-level errors will actually fail the tests.
 .then(function() {
-  return vm.eval("raise RuntimeError");
+  return vm.exec("raise RuntimeError");
 })
 .then(function() {
   throw new Error("Python exception did not trigger js Error");
@@ -38,30 +38,40 @@ var PyPyJSTestResult = vm.ready
   }
 })
 
-// Check that the basic set-eval-get cycle works correctly.
+// Check that the basic set-exec-get cycle works correctly.
 .then(function() {
   return vm.set("x", 7);
 })
 .then(function() {
-  return vm.eval("x = x * 2");
+  return vm.exec("x = x * 2");
 })
 .then(function() {
   return vm.get("x");
 })
 .then(function(x) {
   if (x !== 14) {
-    throw new Error("set-eval-get cycle failed");
+    throw new Error("set-exec-get cycle failed");
+  }
+})
+
+// Check that eval() works correctly.
+.then(function() {
+  return vm.eval("x + 1");
+})
+.then(function(x) {
+  if (x !== 15) {
+    throw new Error("eval failed");
   }
 })
 
 // Check that we execute in correctly-__name__'d python scope.
 .then(function() {
-  return vm.eval("assert __name__ == '__main__', __name__")
+  return vm.exec("assert __name__ == '__main__', __name__")
 })
 
 // Check that sys.platform tells us something sensible.
 .then(function() {
-  return vm.eval("import sys; assert sys.platform == 'js'");
+  return vm.exec("import sys; assert sys.platform == 'js'");
 })
 
 // Report success or failure at the end of the chain.
