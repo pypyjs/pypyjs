@@ -377,8 +377,8 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """)
         
     def test_module_os(self):
-        # os module is preloaded
         self.assertExecution("""
+            import os
             print os.__file__
         """, """
             /lib/pypyjs/lib_pypy/os.py
