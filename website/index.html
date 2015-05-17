@@ -77,24 +77,22 @@
       // Display a helpful message and twiddle thumbs as it loads.
       vm.stdout('Loading PyPy.js.\n')
       vm.stdout('It\'s big, so this might take a while...\n\n')
-      vm.ready.then(
-        function() {
-          jqconsole.Reset();
-          vm.stdout('Welcome to PyPy.js!\n')
-          // REPL forever via jqconsole prompt.
-          return vm.repl(function(ps1) {
-            jqconsole.SetPromptLabel(ps1);
-            return new Promise(function(resolve, reject) {
-              jqconsole.Prompt(true, function (input) {
-                resolve(input);
-              });
+      vm.ready.then(function() {
+        jqconsole.Reset();
+        vm.stdout('Welcome to PyPy.js!\n')
+        // REPL forever via jqconsole prompt.
+        return vm.repl(function(ps1) {
+          jqconsole.SetPromptLabel(ps1);
+          return new Promise(function(resolve, reject) {
+            jqconsole.Prompt(true, function (input) {
+              resolve(input);
             });
           });
-        },
-        function(err) {
-          jqconsole.Write('ERROR: ' + err);
-        }
-      );
+        });
+      }).then(null, function(err) {
+        jqconsole.Reset();
+        jqconsole.Write('ERROR: ' + err);
+      });
     });
   </script>
 
