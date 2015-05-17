@@ -15,6 +15,7 @@ interpreter.  In the browser::
 
     <!-- shim for ES6 `Promise` builtin -->
     <script src="./lib/Promise.min.js" type="text/javascript"></script>
+    <script src="./lib/FunctionPromise.js" type="text/javascript"></script>
     <script src="./lib/pypy.js" type="text/javascript"></script>
     <script type="text/javascript">
       var vm = new PyPyJS();
@@ -50,17 +51,22 @@ object to the `PyPyJS` constructor, like this::
 
 The available options are:
 
-    * totalMemory:  the amount of heap memory to allocate for the interpreter, in bytes
-    * stdin:  function simulate standard input; should return input chars when called.
-    * stdout:  function simulate standard output; will be called with output chars.
-    * stderr:  function simulate standard error; will be called with error output chars.
-    * autoLoadModules:  boolean, whether to automatically load module source files (see below).
+    * totalMemory:  the amount of heap memory to allocate for the interpreter,
+                    in bytes
+    * stdin:  function to simulate standard input; should return input chars
+              when called.
+    * stdout:  function to simulate standard output; will be called with
+               output chars.
+    * stderr:  function to simulate standard error; will be called with error
+               output chars.
+    * autoLoadModules:  boolean, whether to automatically load module source
+                        files for import statements (see below).
 
 
 Invoking the Interpreter
 ------------------------
 
-There are three methods available for interacting with the interpreter:
+There are three core methods available for interacting with the interpreter:
 
 * `vm.eval(code)`:  executes python code in the interpreter's global scope.
 * `vm.set(name, value)`:  sets a variable in the interpreter's global scope.
@@ -84,6 +90,13 @@ The following example evaluates a simple arithmetic expression via Python::
       console.log(result);  // prints '24'
     });
 
+If you have a python code file to execute, the `execfile` helper method will
+fetch it and pass it to the interpreter for execution::
+
+    vm.execfile("/path/to/some/file.py");
+
+
+
 
 Using Python Modules
 --------------------
@@ -94,9 +107,50 @@ be loaded into the virtual filesystem before they can be imported.
 
 To make imports work as transparently as possible, PyPy.js ships with a bundled
 copy of the Python standard library in `./lib/modules`, and includes an index
-of 
+of all available modules and what they import in `./lib/modules/index.json`.
+When you execute some python source code containing import statements, like
+this::
 
+    vm.eval("import json; print json.dumps({'hello': 'world'})")
 
+The PyPy.js interpreter shell will do the following:
+
+  * Scan the python code for import statements, and build up a list
+    of all module names that it imports.
+  * Find the entries for those modules in `./lib/modules/index.json` and
+    fetch the corresponding source files.
+  * Write the source files into the virtualized filesystem of the
+    interpreter.
+  * Submit the code to the interpreter for execution.
+
+This will usually work transparently, unless your code does any "hidden"
+imports that cannot be easily detected by scanning the code.  For example,
+the following would defeat the import system::
+
+    vm.eval("json = __import__('json')")  // fails with an ImportError
+
+To work around this limitation, you can force loading of a particular module
+like so::
+
+    vm.loadModuleData("json").then(function() {
+      return vm.eval("json = __import__('json')")  // works fine
+    });
+
+To add additional python modules to the distribution, use the script
+`./tools/module_bundler.py` that comes with the release tarball.  It can
+be used to add modules to the bundle::
+
+    python ./tools/module_bundler.py add ./lib/modules custom.py
+    python ./tools/module_bundler.py add ./lib/modules package_dir/
+
+To remove unwanted modules from the bundle::
+
+    python ./tools/module_bundler.py remove ./lib/modules shutil unittest
+
+And to indicate that some modules should be eagerly loaded at interpreter
+startup::
+
+    python ./tools/module_bundler.py preload ./lib/modules antigravity
 
 
 Interacting with the Host Environment
@@ -126,13 +180,22 @@ interpreter and the host javascript environment.  This includes numbers,
 strings, lists and dicts, but not custom objects::
 
     >>> keys = js.globals.Object.keys({"a": 1, "b": 2})
+    >>> print repr(keys)
+    <js.Array handle=32>
     >>> print keys
-    <TODO>
+    a,b
     >>> print list(keys)
     ["a", "b"]
     >>>
 
-Python functions can be passed to javascript as callbacks like so::
+Python functions can be passed to javascript as synchronous callbacks like
+so::
+
+    >>> def print_item(item):
+    ...   print item
+    ...
+    >>> # TODO: check this
+    >>> js.globals.
 
     >>> def hello():
     ...   print "hello"
