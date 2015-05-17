@@ -68,7 +68,7 @@ Invoking the Interpreter
 
 There are three core methods available for interacting with the interpreter:
 
-* `vm.eval(code)`:  executes python code in the interpreter's global scope.
+* `vm.exec(code)`:  executes python code in the interpreter's global scope.
 * `vm.set(name, value)`:  sets a variable in the interpreter's global scope.
 * `vm.get(name)`:  copy a variable from the interpreter's global scope.
 
@@ -80,7 +80,7 @@ The following example evaluates a simple arithmetic expression via Python::
 
     function pyDouble(x) {
       vm.set('x', x).then(function() {
-        return vm.eval('x = x * 2');
+        return vm.exec('x = x * 2');
       }).then(function() {
         return vm.get('x')
       });
@@ -115,7 +115,7 @@ of all available modules and what they import in `./lib/modules/index.json`.
 When you execute some python source code containing import statements, like
 this::
 
-    vm.eval("import json; print json.dumps({'hello': 'world'})")
+    vm.exec("import json; print json.dumps({'hello': 'world'})")
 
 The PyPy.js interpreter shell will do the following:
 
@@ -131,13 +131,13 @@ This will usually work transparently, unless your code does any "hidden"
 imports that cannot be easily detected by scanning the code.  For example,
 the following would defeat the import system::
 
-    vm.eval("json = __import__('json')")  // fails with an ImportError
+    vm.exec("json = __import__('json')")  // fails with an ImportError
 
 To work around this limitation, you can force loading of a particular module
 like so::
 
     vm.loadModuleData("json").then(function() {
-      return vm.eval("json = __import__('json')")  // works fine
+      return vm.exec("json = __import__('json')")  // works fine
     });
 
 To add additional python modules to the distribution, use the script

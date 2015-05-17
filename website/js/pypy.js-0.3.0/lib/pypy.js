@@ -453,13 +453,14 @@ PyPyJS.prototype._execute_source = function _execute_source(code) {
 }
 
 
-// Method to evaluate some python code.
+// Method to execute some python code.
 //
 // This passes the given python code to the VM for execution.
+// It's fairly directly analogous to the "exec" statement in python.
 // It is not possible to directly access the result of the code, if any.
 // Rather you should store it into a variable and then use the get() method.
 //
-PyPyJS.prototype.eval = function eval(code) {
+PyPyJS.prototype.exec = function exec(code) {
   return this.ready.then((function() {
     var p = Promise.resolve();
     // Find any "import" statements in the code,
@@ -483,6 +484,11 @@ PyPyJS.prototype.eval = function eval(code) {
 }
 
 
+// For backwards compatibility.
+
+PyPyJS.prototype.eval = PyPyJS.prototype.exec
+
+
 
 // Method to evaluate some python code from a file..
 //
@@ -491,7 +497,7 @@ PyPyJS.prototype.eval = function eval(code) {
 PyPyJS.prototype.execfile = function execfile(filename) {
   return this.fetch(filename).then((function(xhr) {
     var code = xhr.responseText;
-    return this.eval(code);
+    return this.exec(code);
   }).bind(this));
 }
 
@@ -506,6 +512,7 @@ PyPyJS._resultsID = 0;
 PyPyJS._resultsMap = {};
 PyPyJS.prototype.get = function get(name, _fromGlobals) {
   var resid = ""+(PyPyJS._resultsID++);
+  // We can read from global scope for internal use; don't do this from calling code!
   if (_fromGlobals) {
     var namespace = "globals()";
   } else {
