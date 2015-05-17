@@ -72,7 +72,7 @@ There are three core methods available for interacting with the interpreter:
 * `vm.set(name, value)`:  sets a variable in the interpreter's global scope.
 * `vm.get(name)`:  copy a variable from the interpreter's global scope.
 
-Only primitive value types can be retrieved from the interpreter via `get`.
+Only primitive value types can be retrieved from the interpreter via `get()`.
 This includes python numbers, strings, lists and dicts, but not custom
 objects.
 
@@ -90,16 +90,20 @@ The following example evaluates a simple arithmetic expression via Python::
       console.log(result);  // prints '24'
     });
 
-If you have a python code file to execute, the `execfile` helper method will
+
+If you have a python code file to execute, the `execfile()` helper method will
 fetch it and pass it to the interpreter for execution::
 
     vm.execfile("/path/to/some/file.py");
 
 
+If you'd like to simulate an interactive python console, the helper method
+`repl()` can be used to enter an interactive loop.  It takes 
 
 
-Using Python Modules
---------------------
+
+Importing Python Modules
+------------------------
 
 The PyPy.js interpreter uses a virtualized in-memory filesystem, which makes
 its import system a little fragile.  The source code for python modules must
@@ -184,19 +188,45 @@ strings, lists and dicts, but not custom objects::
     <js.Array handle=32>
     >>> print keys
     a,b
-    >>> print list(keys)
-    ["a", "b"]
+    >>> print list(keys[i] for i in keys)
+    [<js.String 'a'>, <js.String 'b'>]
     >>>
 
 Python functions can be passed to javascript as synchronous callbacks like
 so::
 
-    >>> def print_item(item):
-    ...   print item
-    ...
-    >>> # TODO: check this
-    >>> js.globals.
+    >>> def print_item(key, value, ctx):
+    ...     print key, "=>", value
+    ... 
+    >>> keys.forEach(print_item)
+    a => 0
+    b => 1
+    <js.Undefined>
+    >>> 
 
+Note that there is currently no integration between the garbage collector
+in PyPy.js and the one in javascript.  This makes *asynchronous* callbacks a
+little tricky.  You must manually keep references alive on the python side
+for as long as they're held by javascript.
+
+For example, the following will fail because the lambda is garbage-collected
+by python before it gets called by javascript::
+
+    >>> js.globals.setTimeout(lambda: sys.stdout.write('hello\n'), 5000)
+    <js.Number 2134.000000>
+    >>> gc.collect()
+    0
+    >>> 
+    <RuntimeError object at 0x15d908>
+    RPython traceback:
+      ...
+    >>>
+
+In general, you should use module-level functions for asynchronous callbacks,
+and should wrap them with the `js.Function()` constructor to create a stable
+mapping between the javascript and python objects.  For example::
+
+    >>> @js.Function
     >>> def hello():
     ...   print "hello"
     ... 
@@ -206,19 +236,7 @@ so::
     hello
     >>> 
 
-However, note that there is currently no integration between the garbage
-collector in PyPy.js and the one in javascript.  You *must* hold a reference
-to the function on the python side.  For example, this could fail if the
-lambda is garbage-collected by python before it is called from javascript::
-
-    >>> js.globals.setTimeout(lambda: 42, 1000)
-    # [one second passes, during which a gc occurs]
-    <RuntimeError object at 0x15d648>
-    RPython traceback:
-      ...
-    Fatal RPython error: 
-    >>>
-
-This restriction may be relaxed in future, but is unlikely to go away 
-entirely due to limitations of hooking into javascript's garbage collector.
+Some of these restrictions may be relaxed in future, but they're unlikely to
+go away entirely due to javascript's limited facilities for introspecting the
+garbage collector.
 

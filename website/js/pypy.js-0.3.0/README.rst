@@ -188,7 +188,14 @@ strings, lists and dicts, but not custom objects::
     ["a", "b"]
     >>>
 
-Python functions can be passed to javascript as callbacks like so::
+Python functions can be passed to javascript as synchronous callbacks like
+so::
+
+    >>> def print_item(item):
+    ...   print item
+    ...
+    >>> # TODO: check this
+    >>> js.globals.
 
     >>> def hello():
     ...   print "hello"
