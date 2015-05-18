@@ -185,8 +185,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
 
         script2 = (
             "function selenium_vm_run_done() {$( '#selenium_vm_run' ).remove();}"
-            # "vm.exec('%s').then(selenium_vm_run_done, selenium_vm_run_done);"
-            "vm._execute_source('%s').then(selenium_vm_run_done, selenium_vm_run_done);"
+            "vm.exec('%s').then(selenium_vm_run_done, selenium_vm_run_done);"
         ) % script
 
         # self.out('\nExecute script: %s' % script)
@@ -364,10 +363,10 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """
         self.assertExecution("""
             import js
-            js.eval('var one = 1')
-            js.eval('one')
+            js.eval('var one = 123.456')
+            print js.eval('one')
         """, """
-            <js.Number 1.000000>
+            123.456
         """)
 
     def test_module_random(self):
