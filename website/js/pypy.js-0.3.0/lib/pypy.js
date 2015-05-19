@@ -215,102 +215,19 @@ function PyPyJS(opts) {
     this.rootURL += "/";
   } 
 
-  this.ready = new Promise((function(resolve, reject) {
+  // If we haven't already done so, fetch and load the code for the VM.
+  // We do this once and cache the result for re-use, so that we don't
+  // have to pay asmjs compilation overhead each time we create the VM.
 
-    // Fetch the emscripten-compiled asmjs code.
-    // We will need to eval() this in a scope with a custom 'Module' object.
-    this.fetch("pypy.vm.js")
-    .then((function(xhr) {
-
-      // Initialize the Module object.
-      // We make it available on this object so that we can use
-      // its methods to execute code in the VM.
-      var Module = {};
-      this._module = Module;
-      Module.TOTAL_MEMORY = this.totalMemory;
-
-      // We will set up the filesystem manually when we're ready.
-      Module.noFSInit = true;
-      Module.thisProgram = "/lib/pypyjs/pypy.js";
-      Module.filePackagePrefixURL = this.rootURL || PyPyJS.rootURL;
-      Module.memoryInitializerPrefixURL = this.rootURL || PyPyJS.rootURL;
-      Module.locateFile = function(name) {
-        return (this.rootURL || PyPyJS.rootURL) + name;
-      }
-
-      // Don't start or stop the program, just set it up.
-      // We'll call the API functions ourself.
-      Module.noInitialRun = true;
-      Module.noExitRuntime = true;
-
-      // Route stdin to an overridable method on the object.
-      var stdin = (function stdin() {
-        return this.stdin();
-      }).bind(this);
- 
-      // Route stdout to an overridable method on the object.
-      // We buffer the output for efficiency.
-      var stdout_buffer = []
-      var stdout = (function stdout(x) {
-        var c = String.fromCharCode(x);
-        stdout_buffer.push(c);
-        if (c === "\n" || stdout_buffer.length >= 128) {
-          this.stdout(stdout_buffer.join(""));
-          stdout_buffer = [];
-        }
-      }).bind(this);
-
-      // Route stderr to an overridable method on the object.
-      // We do not buffer stderr.
-      var stderr = (function stderr(x) {
-        var c = String.fromCharCode(x);
-        this.stderr(c);
-      }).bind(this);
-
-      // This is where execution will continue after loading
-      // the memory initialization data.
-      var initializedResolve, initializedReject;
-      var initializedP = new Promise(function(resolve, reject) {
-          initializedResolve = resolve;
-          initializedReject = reject;
-      });
-      var FS;
-      dependenciesFulfilled = function(fs) {
-        FS = fs;
-        // Initialize the filesystem state.
-        try {
-          FS.init(stdin, stdout, stderr);
-          Module.FS_createPath("/", "lib/pypyjs/lib_pypy", true, false);
-          Module.FS_createPath("/", "lib/pypyjs/lib-python/2.7", true, false);
-          initializedResolve();
-        } catch (err) {
-          initializedReject(err);
-        }
-      }
- 
-      // Begin fetching the metadata for available python modules.
-      // With luck these can download while we jank around compiling
-      // all of that javascript.
-      // XXX TODO: also load memory initializer this way.
-      var moduleDataP = this.fetch("modules/index.json");
-
+  if (! PyPyJS._vmBuilderPromise) {
+    PyPyJS._vmBuilderPromise = this.fetch("pypy.vm.js").then((function(xhr) {
       // Parse the compiled code, hopefully asynchronously.
       // Unfortunately our use of Function constructor here doesn't
       // play very well with nodejs, where things like 'module' and
       // 'require' are not in the global scope.  We have to pass them
       // in explicitly as arguments.
-      var funcArgs = [
-        Module,
-        dependenciesFulfilled,
-        typeof require === 'undefined' ? undefined : require,
-        typeof module === 'undefined' ? undefined : module,
-        typeof __filename === 'undefined' ? undefined : __filename,
-        typeof __dirname === 'undefined' ? undefined : __dirname
-      ];
-
       var funcBody = [
-        // Execute the compiled code for the VM.
-        // We'll pass in Module and dependenciesFulfilled as arguments.
+        // This is the compiled code for the VM.
         xhr.responseText,
         '\n',
         // Ensure that some functions are available on the Module,
@@ -326,51 +243,136 @@ function PyPyJS(opts) {
         "dependenciesFulfilled=function() { inDependenciesFulfilled(FS); };",
         "if(!memoryInitializer||(!ENVIRONMENT_IS_WEB&&!ENVIRONMENT_IS_WORKER))dependenciesFulfilled();",
       ].join("");
-
       return FunctionPromise("Module", "inDependenciesFulfilled", "require",
                              "module", "__filename", "__dirname", funcBody)
-      .then(function(vmBuilder) {
-        // The links the async-compiled module into our Module object.
-        vmBuilder.apply(null, funcArgs);
-        return initializedP;
-      })
-      .then((function() {
-        // Continue with processing the downloaded module metadata.
-        return moduleDataP.then((function(xhr) {
-          // Store the module index, and load any preload modules.
-          var modIndex = JSON.parse(xhr.responseText);
-          this._allModules = modIndex.modules;
-          if (modIndex.preload) {
-            for (var name in modIndex.preload) {
-              this._writeModuleFile(name, modIndex.preload[name]);
-            }
+    }).bind(this));
+  }
+
+  // Create a new instance of the compiled VM, bound to local state
+  // and a local Module object.
+
+  this.ready = new Promise((function(resolve, reject) {
+
+    // Initialize the Module object.
+    // We make it available on this object so that we can use
+    // its methods to execute code in the VM.
+    var Module = {};
+    this._module = Module;
+    Module.TOTAL_MEMORY = this.totalMemory;
+
+    // We will set up the filesystem manually when we're ready.
+    Module.noFSInit = true;
+    Module.thisProgram = "/lib/pypyjs/pypy.js";
+    Module.filePackagePrefixURL = this.rootURL || PyPyJS.rootURL;
+    Module.memoryInitializerPrefixURL = this.rootURL || PyPyJS.rootURL;
+    Module.locateFile = function(name) {
+      return (this.rootURL || PyPyJS.rootURL) + name;
+    }
+
+    // Don't start or stop the program, just set it up.
+    // We'll call the API functions ourself.
+    Module.noInitialRun = true;
+    Module.noExitRuntime = true;
+
+    // Route stdin to an overridable method on the object.
+    var stdin = (function stdin() {
+      return this.stdin();
+    }).bind(this);
+ 
+    // Route stdout to an overridable method on the object.
+    // We buffer the output for efficiency.
+    var stdout_buffer = []
+    var stdout = (function stdout(x) {
+      var c = String.fromCharCode(x);
+      stdout_buffer.push(c);
+      if (c === "\n" || stdout_buffer.length >= 128) {
+        this.stdout(stdout_buffer.join(""));
+        stdout_buffer = [];
+      }
+    }).bind(this);
+
+    // Route stderr to an overridable method on the object.
+    // We do not buffer stderr.
+    var stderr = (function stderr(x) {
+      var c = String.fromCharCode(x);
+      this.stderr(c);
+    }).bind(this);
+
+    // This is where execution will continue after loading
+    // the memory initialization data, if any.
+    var initializedResolve, initializedReject;
+    var initializedP = new Promise(function(resolve, reject) {
+      initializedResolve = resolve;
+      initializedReject = reject;
+    });
+    var FS;
+    dependenciesFulfilled = function(fs) {
+      FS = fs;
+      // Initialize the filesystem state.
+      try {
+        FS.init(stdin, stdout, stderr);
+        Module.FS_createPath("/", "lib/pypyjs/lib_pypy", true, false);
+        Module.FS_createPath("/", "lib/pypyjs/lib-python/2.7", true, false);
+        initializedResolve();
+      } catch (err) {
+        initializedReject(err);
+      }
+    }
+ 
+    // Begin fetching the metadata for available python modules.
+    // With luck these can download while we jank around compiling
+    // all of that javascript.
+    // XXX TODO: also load memory initializer this way.
+    var moduleDataP = this.fetch("modules/index.json");
+
+    PyPyJS._vmBuilderPromise.then((function(vmBuilder) {
+      var args = [
+        Module,
+        dependenciesFulfilled,
+        typeof require === 'undefined' ? undefined : require,
+        typeof module === 'undefined' ? undefined : module,
+        typeof __filename === 'undefined' ? undefined : __filename,
+        typeof __dirname === 'undefined' ? undefined : __dirname
+      ];
+      // This links the async-compiled module into our Module object.
+      vmBuilder.apply(null, args);
+      return initializedP;
+    }).bind(this)).then((function() {
+      // Continue with processing the downloaded module metadata.
+      return moduleDataP.then((function(xhr) {
+        // Store the module index, and load any preload modules.
+        var modIndex = JSON.parse(xhr.responseText);
+        this._allModules = modIndex.modules;
+        if (modIndex.preload) {
+          for (var name in modIndex.preload) {
+            this._writeModuleFile(name, modIndex.preload[name]);
           }
-          // It's finally safe to launch the VM.
-          Module.run();
-          Module._rpython_startup_code();
-          var pypy_home = Module.intArrayFromString("/lib/pypyjs/pypy.js");
-          pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
-          Module._pypy_setup_home(pypy_home, 0);
-          Module._free(pypy_home);
-          var initCode = [
-            "import js",
-            "import sys; sys.platform = 'js'",
-            "import traceback",
-            "top_level_scope = {'__name__': '__main__'}"
-          ];
-          initCode.forEach(function(codeStr) {
-            var code = Module.intArrayFromString(codeStr);
-            var code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
-            if (!code) {
-              throw new PyPyJS.Error('Failed to allocate memory');
-            }
-            var res = Module._pypy_execute_source(code);
-            if (res < 0) {
-              throw new PyPyJS.Error('Failed to execute python code');
-            }
-            Module._free(code);
-          });
-        }).bind(this));
+        }
+        // It's finally safe to launch the VM.
+        Module.run();
+        Module._rpython_startup_code();
+        var pypy_home = Module.intArrayFromString("/lib/pypyjs/pypy.js");
+        pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
+        Module._pypy_setup_home(pypy_home, 0);
+        Module._free(pypy_home);
+        var initCode = [
+          "import js",
+          "import sys; sys.platform = 'js'",
+          "import traceback",
+          "top_level_scope = {'__name__': '__main__'}"
+        ];
+        initCode.forEach(function(codeStr) {
+          var code = Module.intArrayFromString(codeStr);
+          var code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
+          if (!code) {
+            throw new PyPyJS.Error('Failed to allocate memory');
+          }
+          var res = Module._pypy_execute_source(code);
+          if (res < 0) {
+            throw new PyPyJS.Error('Failed to execute python code');
+          }
+          Module._free(code);
+        });
       }).bind(this))
     }).bind(this))
     .then(resolve, reject);
