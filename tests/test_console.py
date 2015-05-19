@@ -317,8 +317,6 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     def test_name(self):
         """
         https://github.com/rfk/pypyjs/issues/104
-        vm._execute_source("print __name__") -> __builtin__
-        vm.exec("print __name__") -> __main__
         """
         self.assertExecution("print __name__ ", "__main__")
 
@@ -390,17 +388,6 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """, """
             /lib/pypyjs/lib_pypy/pprint.py
         """)
-
-    def test_module_platform(self):
-        """
-        https://github.com/rfk/pypyjs/issues/6
-        """
-        self.assertExecution("""
-            import platform
-            print platform.__file__
-        """, """
-            /lib/pypyjs/lib_pypy/platform.py
-        """)
         
     def test_module_os(self):
         self.assertExecution("""
@@ -409,44 +396,6 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """, """
             /lib/pypyjs/lib_pypy/os.py
         """)
-
-    def test_imports(self):
-
-        # hack a list of available modules:
-        libpath = website_path("js/pypy.js-0.3.0/lib/modules")
-        module_names = [
-            os.path.splitext(item)[0]
-            for item in sorted(os.listdir(libpath))
-            if not item.startswith("_") and item.endswith(".py")
-        ]
-
-        good = failed = 0
-        total_count = len(module_names)
-        self.out("\nTry to import %i modules:" % total_count)
-        for no, module_name in enumerate(sorted(module_names)):
-            python_script = """
-                try:
-                    import %(name)s
-                except (ImportError, NameError) as err:
-                    print "Error importing '%(name)s': %%s" %% err
-                else:
-                    print "Import '%(name)s', ok."
-            """ % {"name":module_name}
-            self.clear_console()
-            self._execute_code(python_script)
-            response = self._get_console_text()
-            if "ok" in response:
-                good += 1
-            elif "Error" in response:
-                failed += 1
-            else:
-                self.fail(msg=response)
-            self.out("\t%i/%i: %s" % (no, total_count, response))
-
-            if failed >= 10:
-                self.fail("import test failed more than 10 times. Abort the test.")
-
-        self.assertEqual(failed, 0)
 
 
 
