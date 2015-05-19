@@ -155,7 +155,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         super(PyPyJSSeleniumTests, cls).setUpClass()
         cls.driver.get(cls.index_url)
 
-        cls.out("\nWait for init...")
+        print("\nWait for init...", file=sys.stderr)
         assert "PyPy.js" == cls.driver.title
 
         check = WebDriverWait(cls.driver, 10).until(
