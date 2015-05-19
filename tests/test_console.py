@@ -12,6 +12,8 @@
     (pypyjs_env)~/pypyjs_env $ cd src/pypyjs/
     (pypyjs_env)~/pypyjs_env/src/pypyjs$ ./runtests.py
 
+    TODO:
+     * merge same code parts with 'editor' branch after both branches are merges
 """
 
 from __future__ import absolute_import, print_function
@@ -112,38 +114,6 @@ class BaseSeleniumTestCase(unittest.TestCase):
         self.assertEqual(console_text, txt, msg=msg)
 
 
-class PyPyJSSeleniumLowLevelTests(BaseSeleniumTestCase):
-    """
-    Tests that reload the page completely.
-    This will take relative long time :(
-    """
-
-    def setUp(self):
-        self.driver.get(self.index_url)
-        try:
-            self.out("\nWait for console...")
-            self.assertEqual(self.driver.title, "PyPy.js")
-
-            check = WebDriverWait(self.driver, 10).until(
-                expected_conditions.text_to_be_present_in_element(
-                    (By.ID, "console"), ">>>"
-                )
-            )
-            self.assertTrue(check)
-        except Exception:
-            self._verbose_assertion_error(self.driver)
-
-        # clear the console content:
-        self.driver.execute_script('jqconsole.Reset()')
-
-    def test(self):
-        self.driver.execute_script('vm.eval("import sys;print(sys.version)")')
-        self.assertConsole("""
-            2.7.8 (?, May 17 2015, 07:02:41)
-            [PyPy 2.5.0]
-        """)
-
-
 class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     """
     Request and init PyPyJS in setUpClass
@@ -211,48 +181,47 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         else:
             self.assertTrue(check)
 
-    def assertExecution(self, python_script, console_output, timeout=10):
+    def assertExecConsole(self, python_script, console_output, timeout=10):
+        """
+        Execute the given python_script and check the console output.
+        """
+        self.clear_console()
         self._execute_code(python_script, timeout)
         self.assertConsole(console_output)
 
     def test_execute_escaping(self):
-        self.assertExecution("""
+        self.assertExecConsole("""
             print 'single quote'
         """, """
             single quote
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             print "double quote"
         """, """
             double quote
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             print "a 'single quote' in double quote"
         """, """
             a 'single quote' in double quote
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             print 'a "double quote" in single quote'
         """, """
             a "double quote" in single quote
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             print "a\\nnew line"
         """, """
             a
             new line
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             print "OK\\nisn't it?"
         """, """
             OK
@@ -260,7 +229,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
         """)
 
     def test_execute_multiline(self):
-        self.assertExecution("""
+        self.assertExecConsole("""
             print "one"
             print "two"
         """, """
@@ -268,8 +237,7 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
             two
         """)
 
-        self.clear_console()
-        self.assertExecution("""
+        self.assertExecConsole("""
             for i in range(2):
                 print i
 
@@ -280,123 +248,15 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
             OK
         """)
 
-    def test_sys_version(self):
-        self.assertExecution("""
+    def test_standard_out_streams(self):
+        self.assertExecConsole("""
             import sys
-            print sys.version
+            sys.stdout.write("to sys.stdout\\n")
+            sys.stderr.write("to sys.stderr\\n")
         """, """
-            2.7.8 (?, May 17 2015, 07:02:41)
-            [PyPy 2.5.0]
+            to sys.stdout
+            to sys.stderr
         """)
-
-        self.clear_console()
-
-        self.assertExecution("""
-            for path in sys.path:
-                print path
-        ""","""
-            /lib/pypyjs/lib_pypy/__extensions__
-            /lib/pypyjs/lib_pypy
-            /lib/pypyjs/lib-python/2.7
-            /lib/pypyjs/lib-python/2.7/lib-tk
-            /lib/pypyjs/lib-python/2.7/plat-linux2
-        """)
-
-
-    def test_sys_platform(self):
-        """
-        https://github.com/rfk/pypyjs/issues/49
-        """
-        self.assertExecution("""
-            import sys
-            print sys.platform
-        """, """
-            js
-        """)
-
-    def test_name(self):
-        """
-        https://github.com/rfk/pypyjs/issues/104
-        """
-        self.assertExecution("print __name__ ", "__main__")
-
-    def test_pickle(self):
-        """
-        https://github.com/rfk/pypyjs/issues/83
-        """
-        self.assertExecution("""
-            import cPickle as pickle
-            d = pickle.dumps({'foo': 'bar'})
-            print d
-            print pickle.loads(d)
-        """, """
-            (dp1
-            S'foo'
-            p2
-            S'bar'
-            p3
-            s.
-            {'foo': 'bar'}
-        """)
-        self.clear_console()
-        self.assertExecution("""
-            import pickle
-            print pickle.loads(pickle.dumps({'a': 'a'}))
-        """, """
-            {'a': 'a'}
-        """)
-
-    def test_js_module1(self):
-        self.assertExecution("""
-            import js
-            math = js.globals.Math
-            print(math.log(2))
-        """, """
-            0.6931471805599453
-        """)
-
-    def test_js_module2(self):
-        """
-        https://github.com/rfk/pypyjs/issues/56
-        """
-        self.assertExecution("""
-            import js
-            js.eval('var one = 123.456')
-            print js.eval('one')
-        """, """
-            123.456
-        """)
-
-    def test_module_random(self):
-        """
-        https://github.com/rfk/pypyjs/issues/4
-        """
-        self.assertExecution("""
-            import random
-            print random.__file__
-        """, """
-            /lib/pypyjs/lib_pypy/random.py
-        """)
-
-    def test_module_pprint(self):
-        """
-        https://github.com/rfk/pypyjs/issues/5
-        """
-        self.assertExecution("""
-            import pprint
-            print pprint.__file__
-        """, """
-            /lib/pypyjs/lib_pypy/pprint.py
-        """)
-        
-    def test_module_os(self):
-        self.assertExecution("""
-            import os
-            print os.__file__
-        """, """
-            /lib/pypyjs/lib_pypy/os.py
-        """)
-
 
 
 if __name__ == "__main__":
