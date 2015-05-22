@@ -381,6 +381,7 @@ function PyPyJS(opts) {
 };
 
 
+
 // A simple file-fetching wrapper around XMLHttpRequest,
 // that treats paths as relative to the pypy.js root url.
 //
@@ -389,6 +390,9 @@ PyPyJS.prototype.fetch = function fetch(relpath, responseType) {
   if (typeof XMLHttpRequest !== "undefined") {
     return new Promise((function(resolve, reject) {
       var xhr = new XMLHttpRequest();
+      if (typeof XMLHttpRequestLoadStatus !== "undefined") {
+        xhr.onprogress = XMLHttpRequestLoadStatus;
+      };
       xhr.onload = function() {
         if (xhr.status >= 400) {
           reject(xhr)
