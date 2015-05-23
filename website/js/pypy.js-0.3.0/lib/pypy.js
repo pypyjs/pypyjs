@@ -693,6 +693,16 @@ PyPyJS.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
     // Push it into the InteractiveConsole, a line at a time.
     var p = Promise.resolve();
     input.split("\n").forEach((function(line) {
+      // Find any "import" statements in the code,
+      // and ensure the modules are ready for loading.
+      if (this.autoLoadModules) {
+        p = p.then((function() {
+          return this.findImportedNames(line);
+        }).bind(this))
+        .then((function(imports) {
+          return this.loadModuleData.apply(this, imports);
+        }).bind(this))
+      }
       var code = 'r = c.push(\'' + _escape(line) + '\')';
       p = p.then((function() {
         return this._execute_source(code);
