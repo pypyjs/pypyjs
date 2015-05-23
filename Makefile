@@ -70,7 +70,7 @@ lib: ./lib/pypy.vm.js
 # This makes a releasable tarball containing the compiled pypy interpreter,
 # supporting javascript code, and the python stdlib modules and tooling.
 
-VERSION = 0.3.0
+VERSION = 0.3.1
 
 .PHONY: release
 release: ./build/pypy.js-$(VERSION).tar.gz
