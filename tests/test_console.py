@@ -1,117 +1,32 @@
 #!/usr/bin/env python
 
 """
-    Quick HowTo setup a test environment and run this file:
+    selenium unitests with "console" page
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    ~ $ virtualenv pypyjs_env
-    ~ $ cd pypyjs_env/
-    ~/pypyjs_env $ source bin/activate
-    (pypyjs_env)~/pypyjs_env $ pip install --upgrade pip
-    (pypyjs_env)~/pypyjs_env $ pip install selenium
-    (pypyjs_env)~/pypyjs_env $ pip install -e git+https://github.com/rfk/pypyjs.git#egg=pypyjs
-    (pypyjs_env)~/pypyjs_env $ cd src/pypyjs/
-    (pypyjs_env)~/pypyjs_env/src/pypyjs$ ./runtests.py
-
-    TODO:
-     * merge same code parts with 'editor' branch after both branches are merges
 """
 
 from __future__ import absolute_import, print_function
 
-import difflib
-import os
-import posixpath
 import textwrap
-import traceback
 import unittest
 import sys
+import os
 
-from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
+if __package__ != "tests":
+    # Hack to make it possible to run this file directly
+    __package__="tests"
+    sys.path.insert(0,
+        os.path.join(os.path.dirname(__file__), "..")
+    )
+    import tests
 
-def make_diff(block1, block2):
-    d = difflib.Differ()
-
-    block1 = block1.replace("\\n", "\\n\n").split("\n")
-    block2 = block2.replace("\\n", "\\n\n").split("\n")
-
-    diff = d.compare(block1, block2)
-
-    result = ["%2s %s\n" % (line, i) for line, i in enumerate(diff)]
-    return "".join(result)
-
-
-def website_path(sub_path):
-    path = posixpath.abspath(posixpath.join(os.path.dirname(__file__), "..", "website", sub_path))
-    assert os.path.exists(path), "path %r doesn't exists!" % path
-    return path
-
-
-class BaseSeleniumTestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(BaseSeleniumTestCase, cls).setUpClass()
-        cls.driver = webdriver.Firefox()
-        cls.driver.set_window_size(1024, 768)
-        cls.driver.set_window_position(0, 0)
-        path = website_path("index.html")
-        cls.index_url = "file://%s" % path
-
-    @classmethod
-    def tearDownClass(cls):
-        try:
-            cls.driver.quit()
-        except:
-            pass
-
-    def out(self, *args):
-        print(*args, file=sys.stderr)
-
-    def _verbose_assertion_error(self, driver):
-        self.out("\n")
-        self.out("*" * 79)
-        traceback.print_exc()
-        self.out(" -" * 40)
-
-        page_source = driver.page_source
-
-        if not page_source.strip():
-            self.out("[page coure is empty!]")
-        else:
-            page_source = "\n".join([line for line in page_source.splitlines() if line.rstrip()])
-            self.out(page_source)
-
-        self.out("*" * 79)
-        self.out("\n")
-        raise
-
-    def _get_console_text(self):
-        console = self.driver.find_element_by_id("console")
-        console_text = console.text
-        return console_text.strip()
-
-    def assertConsole(self, txt):
-        console_text = self._get_console_text()
-        
-        txt = textwrap.dedent(txt).strip()
-        msg = textwrap.dedent("""
-
-            *** Console output is: ***
-            %s
-
-            *** the reference: ***
-            %s
-
-            *** diff: ***
-            %s
-        """) % (
-            console_text, txt, make_diff(console_text, txt)
-        )
-        self.assertEqual(console_text, txt, msg=msg)
+from .test_utils.test_cases import BaseSeleniumTestCase
 
 
 class PyPyJSSeleniumTests(BaseSeleniumTestCase):
@@ -123,9 +38,10 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
     @classmethod
     def setUpClass(cls):
         super(PyPyJSSeleniumTests, cls).setUpClass()
+        cls.driver.set_window_size(1000, 650) # min.size to see the complete console
         cls.driver.get(cls.index_url)
 
-        print("\nWait for init...", file=sys.stderr)
+        print("\nWait for init 'PyPy.js console'...", file=sys.stderr)
         assert "PyPy.js" == cls.driver.title
 
         check = WebDriverWait(cls.driver, 10).until(

@@ -1,0 +1,14 @@
+.CodeMirror {
+    border-top: 1px solid black; border-bottom: 1px solid black;
+}
+#console {
+    position: absolute;
+    width: 90%;
+    height: 400px;
+}
+#actions {
+    display:none;
+}
+.float_right {
+    float:right;
+}
