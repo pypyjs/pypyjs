@@ -1,0 +1,18 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+
+python:
+  - "2.7"
+  - "3.4"
+
+before_install:
+  # for selenium/firefox run
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+
+install:
+  - "pip install selenium"
+
+script:
+  - ./tests/runtests.py
