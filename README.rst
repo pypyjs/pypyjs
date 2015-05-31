@@ -2,6 +2,9 @@
 PyPy.js:  PyPy compiled into JavaScript
 =======================================
 
+.. image:: https://travis-ci.org/pypyjs/pypyjs.svg?branch=master
+    :target: https://travis-ci.org/pypyjs/pypyjs
+
 PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
 
