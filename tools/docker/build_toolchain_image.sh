@@ -45,7 +45,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 /usr/bin/pypy:
 	mkdir -p /build
 	# Ensure we have the repo checked out.
-	if [ -d /build/pypy ]; then true; else git clone https://github.com/rfk/pypy /build/pypy; fi;
+	if [ -d /build/pypy ]; then true; else git clone https://github.com/pypyjs/pypy /build/pypy; fi;
 	# Ensure we're using up-to-date code.
 	cd /build/pypy; git pull; git gc --aggressive
 	# Build it, and link it into system path.

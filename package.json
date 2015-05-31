@@ -6,10 +6,10 @@
   "keywords": ["python", "pypy", "asmjs", "emscripten", "wtf"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/rfk/pypyjs"
+    "url": "https://github.com/pypyjs/pypyjs"
   },
   "homepage": "http://pypyjs.org/",
-  "bugs": "https://github.com/rfk/pypyjs/issues/",
+  "bugs": "https://github.com/pypyjs/pypyjs/issues/",
   "main": "./lib/pypy.js",
   "files": [
     "lib/",

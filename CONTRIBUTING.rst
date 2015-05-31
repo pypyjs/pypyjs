@@ -16,13 +16,13 @@ Getting the Code
 
 Our codebase consists of two separate repositories:
 
-  * A fork of the main PyPy project codebase: https://github.com/rfk/pypy
-  * This wrapper repository: https://github.com/rfk/pypyjs
+  * A fork of the main PyPy project codebase: https://github.com/pypyjs/pypy
+  * This wrapper repository: https://github.com/pypyjs/pypyjs
 
 For development you should clone the `pypyjs` repository, which includes the
 `pypy` one as a git submodule::
 
-    $> git clone https://github.com/rfk/pypyjs
+    $> git clone https://github.com/pypyjs/pypyjs
     $> cd pypyjs
     $> git submodule update --init
 
