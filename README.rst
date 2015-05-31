@@ -2,11 +2,11 @@
 PyPy.js:  PyPy compiled into JavaScript
 =======================================
 
-.. image:: https://travis-ci.org/pypyjs/pypyjs.svg?branch=master
-    :target: https://travis-ci.org/pypyjs/pypyjs
-
 PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
+
+.. image:: https://travis-ci.org/pypyjs/pypyjs.svg?branch=master
+    :target: https://travis-ci.org/pypyjs/pypyjs
 
 This is a very-much-in-flux collection of supporting scripts and infrastructure
 for an experimental emscripten/asmjs backend for PyPy.  You can read more about
@@ -19,7 +19,8 @@ a release bundle from the above website and follow the instructions in the
 included `README <README.dist.rst>`_.
 
 If you're like to work on the PyPy.js code itself, please see the details
-in `CONTRIBUTING.rst <CONTRIBUTING.rst>`_.
+in `CONTRIBUTING.rst <CONTRIBUTING.rst>`_.  All code is available under the
+`MIT License <LICENSE.txt>`_.
 
 For the history of the project, see `NEWS <NEWS.md>`_.
 
