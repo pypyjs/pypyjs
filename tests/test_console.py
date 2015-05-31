@@ -258,6 +258,16 @@ class PyPyJSSeleniumTests(BaseSeleniumTestCase):
             to sys.stderr
         """)
 
+    def test_pystone_imports_and_runs(self):
+        self.assertExecConsole("""
+            from test import pystone
+            pystone.main(1)
+        """, """
+            Pystone(1.1) time for 1 passes = 0
+            This machine benchmarks at 0 pystones/second
+        """)
+
+
 
 if __name__ == "__main__":
     unittest.main(
