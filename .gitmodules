@@ -1,3 +1,9 @@
 [submodule "deps/pypy"]
 	path = deps/pypy
 	url = https://github.com/pypyjs/pypy
+[submodule "website/pypyjs-release-nojit"]
+	path = website/pypyjs-release-nojit
+	url = https://github.com/pypyjs/pypyjs-release-nojit.git
+[submodule "website/pypyjs-release"]
+	path = website/pypyjs-release
+	url = https://github.com/pypyjs/pypyjs-release.git
