@@ -1,6 +1,6 @@
 {
   "name": "pypyjs",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "Ryan Kelly <ryan@rfk.id.au>",
   "description": "The PyPy Python VM, in JavaScript",
   "keywords": ["python", "pypy", "asmjs", "emscripten", "wtf"],
