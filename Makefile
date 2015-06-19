@@ -87,7 +87,7 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 	mkdir -p $(RELDIR)/lib
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
-	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
+	# python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
 	# Cromulate for better compressibility, unless it's a debug build.
 	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypy.vm.js ; fi
 	# Copy the supporting JS library code.
