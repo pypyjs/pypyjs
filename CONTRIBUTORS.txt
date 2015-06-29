@@ -11,3 +11,4 @@ make their contributions available under the terms of the project license:
 * Logan Perkins <perkins@injeanieousdesigns.com>
 * Jens Diemer <python@jensdiemer.de>
 * Albert-Jan Nijburg <albertjan@trinket.io>
+* Maxime Chéramy <maxime@cheramy.org>
