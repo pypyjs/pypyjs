@@ -3,33 +3,48 @@
 #
 #  Given an emscripten-compiled .js file with corresponding .js.mem file
 #  for its memory initializer, this script will replace the memory initializer
-#  with a compressed version in .js.lzmem, and will modify the javascript to
+#  with a compressed version in .js.zmem, and will modify the javascript to
 #  transparently decompress it at startup.
 #
-#  The compression scheme used is currently a variant of the LZ4 block format:
+#  The compression scheme used is a based on the deflate format described in:
 #
-#    https://github.com/Cyan4973/lz4/blob/master/lz4_Block_format.md
+#    http://www.ietf.org/rfc/rfc1951.txt
 #
-#  It has been tweaked to provide empirically better compression for the kinds
-#  of data in the PyPy.js memory initializer.  This scheme does not produce as
-#   much compression as e.g. gzip, but the decompression code is very small
-#  and runs very fast and so is highly suitable for running on every single
-#  application startup.
+#  But has some simplifications geared towards simpler and faster decompression
+#  code.  Since we ship the decompression code along with the file, this seems
+#  to pay off in practice.  The resulting memory file is empirically close to
+#  the size produced by zip when used on the PyPy.js data.
+#
+#  Like deflate, literals and match lengths are combined into a single alphabet
+#  and compressed using a huffman code, while distances are compressed using
+#  a separate huffman code.  Unlike deflate, there are no block boundaries,
+#  no extra-bits for encoding distnces, and we use a single huffman code for
+#  the entire string rather than constructing custom codes for each block.
+#
+#  The format of the compressed data is:
+#
+#    [huffman-coded data][literal huffman tree][distance huffman tree]
+#
+#  Where the tree data is in a format designed for easy direct lookup at
+#  runtime.  There's no way to determine the offset of the tree data in
+#  the memory file, this information is encoded directly in the decompression
+#  code inserted into the host javascript file.
 #
 #  Future iterations might use a different scheme.  This can be done without
 #  concern for backwards-compatibility - since we store the decompression code
 #  inline in the host javascript, we can change it at will.
 #
 #  To generate the compressed data, we actually run it through standard
-#  zlib compression and then decode the zlib stream into an equivalent raw
-#  sequence of LZ77 operations.  This avoids having to take a dependency on
-#  any particular external compression software.
+#  zlib compression, decode the zlib stream into an equivalent raw sequence
+#  of LZ77 operations, then re-compress it in the custom format.  This avoids
+#  having to take a dependency on any external compression software.
 #
 
 import os
 import re
 import sys
 import zlib
+import heapq
 from collections import defaultdict
 
 
@@ -42,7 +57,7 @@ CODELEN_ALPHABET = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
 def compress_memory_file(source_filename):
     memory_filename = source_filename + ".mem"
     output_filename = source_filename + ".new"
-    lzmem_filename = source_filename + ".lzmem"
+    zmem_filename = source_filename + ".zmem"
 
     # Read in all the data.  Whatever, it's only a few MB...
 
@@ -52,27 +67,37 @@ def compress_memory_file(source_filename):
     with open(memory_filename) as f:
         memdata = f.read()
 
-    # Generate the compressed "lzmem" file.
+    # Generate the compressed "zmem" file.
 
-    zmemdata = zlib.compress(memdata, 9)
-    lzmem = LZStream(decode_zlib_stream(Bitstream(zmemdata)))
+    lzops = decode_zlib_stream(Bitstream(zlib.compress(memdata, 9)))
+    #lzops = merge_lz_operations(lzops)
+    zmemdata, l_tree, d_tree = zencode(lzops)
 
-    with open(lzmem_filename, "w") as lzmem_file:
-        for lit, match in lzmem.iterpairs():
-            lzmem_file.write(encode_lz_pair(lit, match))
-        lzmem_size = lzmem_file.tell()
+    with open(zmem_filename, "w") as zmem_file:
+        zmem_file.write(zmemdata)
+        l_tree_root = zmem_file.tell()
+        if l_tree_root % 2:
+            zmem_file.write("\x00")
+            l_tree_root += 1
+        zmem_file.write(l_tree)
+        d_tree_root = zmem_file.tell()
+        if d_tree_root % 2:
+            zmem_file.write("\x00")
+            d_tree_root += 1
+        zmem_file.write(d_tree)
+        zmemsize = zmem_file.tell()
 
     # Generate the modified javascript code.
 
     try:
         with open(output_filename, "w") as output_file:
  
-            assert "lzmeminit" not in jsdata
+            assert "zmeminit" not in jsdata
 
             # Tell it to load the compressed memory file, not the raw one.
 
             jsdata = jsdata.replace(os.path.basename(memory_filename),
-                                    os.path.basename(lzmem_filename))
+                                    os.path.basename(zmem_filename))
 
             # Find the (possibly minified) name of the Uint8 heap array,
             # so we can refer to it in the decompressor source code.
@@ -82,6 +107,12 @@ def compress_memory_file(source_filename):
             if match is None:
                 raise ValueError("heap view could not be found")
             HEAPU8 = match.group(1)
+
+            r = re.compile(r"var ([a-zA-Z0-9]+)\s*=\s*new\s+global.Uint16Array")
+            match = r.search(jsdata)
+            if match is None:
+                raise ValueError("heap view could not be found")
+            HEAPU16 = match.group(1)
 
             # Add an function to the asmjs module that will decompress the
             # memory data in-place.  Yes, this is raw hand-written asmjs for
@@ -94,81 +125,11 @@ def compress_memory_file(source_filename):
 
             output_file.write(jsdata[:match.start()])
             output_file.write("}")
-            output_file.write("""
-              function lzmeminit(base, lzcur, lzend) {
-                base=base|0;
-                lzcur=lzcur|0;
-                lzend=lzend|0;
-                var byte=0,litlen=0,mlen=0,mdist=0,vint=0;
-                while(1) {
-                  // We assume that we don't overwrite the lz data...
-                  // if(base >= lzcur) throw "OVERWRITTEN";
-                  // Read and decode lengths from the token.
-                  byte={HEAPU8}[lzcur]|0;
-                  lzcur=lzcur+1|0;
-                  litlen=(byte >> (8 - {TOKEN_BITS_LITERAL}))|0
-                  mlen=(byte & {MAX_RAW_MATCHLEN})|0
-                  // Read extra varint for litlen if present.
-                  if (litlen>>0 == {MAX_RAW_LITLEN}) {
-                    vint = 0;
-                    do {
-                      byte={HEAPU8}[lzcur]|0;
-                      lzcur=lzcur+1|0;
-                      vint = vint << 7 | (byte & 0x7F);
-                    } while(byte & 0x80)
-                    litlen = litlen + vint | 0;
-                  }
-                  // Copy literal data to output.
-                  while(litlen>>0 != 0) {
-                    byte={HEAPU8}[lzcur]|0;
-                    lzcur=lzcur+1|0;
-                    {HEAPU8}[base] = byte|0;
-                    base=base+1|0;
-                    litlen=litlen-1|0;
-                  }
-                  // Break if end of file.
-                  if ((lzcur|0) >= (lzend|0)) break;
-                  // Read match distance.
-                  byte={HEAPU8}[lzcur]|0;
-                  lzcur=lzcur+1|0;
-                  mdist = byte & 0x7F;
-                  if (byte & 0x80) {
-                    byte={HEAPU8}[lzcur]|0;
-                    lzcur=lzcur+1|0;
-                    mdist = (byte << 7) | mdist;
-                  }
-                  mdist=mdist+1|0;
-                  // Read extra varint for matchlen if present.
-                  if (mlen>>0 == {MAX_RAW_MATCHLEN}) {
-                    vint = 0;
-                    do {
-                      byte={HEAPU8}[lzcur]|0;
-                      lzcur=lzcur+1|0;
-                      vint = vint << 7 | (byte & 0x7F);
-                    } while(byte & 0x80)
-                    mlen = mlen + vint | 0;
-                  }
-                  mlen = mlen + 3 | 0;
-                  // Copy match data to output.
-                  while(mlen>>0 != 0) {
-                    byte={HEAPU8}[(base - mdist)>>0]|0;
-                    {HEAPU8}[base] = byte|0;
-                    base=base+1|0;
-                    mlen=mlen-1|0;
-                  }
-                  // Break if end of file.
-                  if ((lzcur|0) >= (lzend|0)) break;
-                }
-                // zero out remaining compressed data
-                while((base|0) < (lzend|0)) {
-                  {HEAPU8}[base]=0;
-                  base=base+1|0;
-                }
-              }
-            """.replace("{HEAPU8}", HEAPU8)
-               .replace("{TOKEN_BITS_LITERAL}", str(TOKEN_BITS_LITERAL))
-               .replace("{MAX_RAW_LITLEN}", str(MAX_RAW_LITLEN))
-               .replace("{MAX_RAW_MATCHLEN}", str(MAX_RAW_MATCHLEN))
+            output_file.write(UNZIP_CODE\
+               .replace("{HEAPU8}", HEAPU8)
+               .replace("{HEAPU16}", HEAPU16)
+               .replace("{L_TREE_ROOT}", str(l_tree_root))
+               .replace("{D_TREE_ROOT}", str(d_tree_root))
             )
             output_file.write(match.group(0)[1:])
             jsdata = jsdata[match.end():]
@@ -181,7 +142,7 @@ def compress_memory_file(source_filename):
                 raise ValueError("EMSCRIPTEN_END_ASM not found")
 
             output_file.write(jsdata[:match.start()])
-            output_file.write(",lzmeminit:lzmeminit")
+            output_file.write(",zmeminit:zmeminit")
             output_file.write(match.group(0))
             jsdata = jsdata[match.end():]
 
@@ -192,165 +153,186 @@ def compress_memory_file(source_filename):
             # end.  This allows it to be decompressed in-place without
             # the possibility of overwriting un-processed data.
 
-            lzset = "HEAPU8.set(data, STATIC_BASE+{lzstart});"
-            lzset += "asm[\"lzmeminit\"](STATIC_BASE,"
-            lzset += "STATIC_BASE+{lzstart},STATIC_BASE+{lzend})"
-            jsdata = re.sub(r"HEAPU8.set\(data,STATIC_BASE\)", lzset.format(
-              lzstart=len(memdata) - lzmem_size + 1,
-              lzend=len(memdata) + 1,
+            zset = "HEAPU8.set(data, STATIC_BASE+{zstart});"
+            zset += "asm[\"zmeminit\"](STATIC_BASE,"
+            zset += "STATIC_BASE+{zstart},STATIC_BASE+{zend})"
+            jsdata = re.sub(r"HEAPU8.set\(data,STATIC_BASE\)", zset.format(
+              zstart=len(memdata),
+              zend=len(memdata) + zmemsize,
             ), jsdata)
             output_file.write(jsdata)
 
 
     except BaseException:
         os.unlink(output_filename)
-        os.unlink(lzmem_filename)
+        os.unlink(zmem_filename)
         raise
     else:
         os.rename(output_filename, source_filename)
         os.unlink(memory_filename)
 
 
+def zencode(lzops):
+    """Translate the given LZ operations into our deflate-like encoding.
 
-# Unlike standard LZ4, we use 3 token bits for literal lenghts and
-# 5 token bits for match lengths.  This seems to consistently give
-# better compression for .mem data file.
-
-TOKEN_BITS_LITERAL = 3
-MAX_RAW_LITLEN = 2**TOKEN_BITS_LITERAL - 1
-MAX_RAW_MATCHLEN = 2**(8 - TOKEN_BITS_LITERAL) - 1
-
-def encode_lz_pair(lit, match):
-    l_head, l_tail = encode_lz_literal(lit)
-    if match is None:
-        m_head = 0
-        m_tail = []
-    else:
-        m_head, m_tail = encode_lz_match(match)
-    head = chr((l_head << (8 - TOKEN_BITS_LITERAL)) | m_head)
-    return head + l_tail + m_tail
-
-
-def encode_lz_literal(lit):
-    litlen = len(lit.data)
-    if litlen < MAX_RAW_LITLEN:
-        return litlen, lit.data
-    else:
-        return MAX_RAW_LITLEN, encode_lz_varint(litlen - MAX_RAW_LITLEN) + lit.data
-
-
-def encode_lz_match(match):
-    # Unlike standard LZ4, encode distance in one or two bytes.
-    # We know it's < 32K, so we can use high bit as flag.
-    # This also means we can store 3-byte matches compactly, while
-    # LZ4 uses a minimum match length of 4 bytes.
-    dist = match.distance - 1
-    assert dist & 0x8000 == 0
-    if dist <= 0x7F:
-        tail = chr(dist)
-    else:
-        tail = chr((dist & 0x7F) | 0x80) + chr(dist >> 7)
-    # Encode length as token plus optional varint.
-    matchlen = match.length - 3
-    if matchlen < MAX_RAW_MATCHLEN:
-        head = matchlen
-    else:
-        head = MAX_RAW_MATCHLEN
-        tail += encode_lz_varint(matchlen - MAX_RAW_MATCHLEN)
-    return head, tail
-
-
-# Unlike standard LZ4, we encode long literal and match lengths as
-# protobuf-style varints rather than runs of 255.  I'm not actually sure
-# if this is a win in practice though...
-
-def encode_lz_varint(value):
-    bytes = []
-    while value > 0x7F:
-        bytes.append(value & 0x7F)
-        value = value >> 7
-    bytes.append(value)
-    bytes.reverse()
-    for i in xrange(len(bytes) - 1):
-        bytes[i] |= 0x80
-    return "".join(chr(b) for b in bytes)
-
-
-class LZStream(object):
-    """A sequence of LZLiteral and LZMatch objects encoding a datastream.
-
-    An LZ77-encoded datastream is an sequence of alternating "literal" and
-    "match" codes, representing data to be copied from the input stream or
-    from a previous position in the output.  We follow lz4 convention by
-    using a strictly alternating sequene, allowing arbitrary length of literals
-    and matches, and ensuring that the stream ends with a literal.
+    This function encodes the literals and (length,distance) pairs of the
+    LZ operation stream into a sequence of bytes, using a huffman-coding
+    scheme similar to deflate.  It returns a three tuple (data, l_tree, d_tree)
+    giving the encoded bytes, and encoded tree structures for decoding the
+    literals/lengths and distances respectively.
     """
-
-    def __init__(self, operations=()):
-        self.operations = [LZLiteral("")]
-        for op in operations:
-            self.append(op)
-
-    def append(self, op):
-        prev = self.operations[-1]
+    lzops = list(clamp_lz_operations(lzops, 2**15-1))
+    # Calculate frequencies for huffman coding trees.
+    l_freqs = defaultdict(lambda: 0.0)
+    d_freqs = defaultdict(lambda: 0.0)
+    for op in lzops:
         if isinstance(op, LZLiteral):
-            if isinstance(prev, LZLiteral):
-                prev.data += op.data
-            else:
-                self.operations.append(op)
+            for c in op.data:
+                l_freqs[ord(c)] += 1
         else:
-            if isinstance(prev, LZLiteral):
-                self.operations.append(op)
-                # Short enough to merge into that literal?
-                # XXX TODO: this seems to increase file size overall,
-                # we may need to be strategic about which we merge.
-                if False and op.length == 3 and op.distance > 127:
-                    if op.length + len(prev.data) < MAX_RAW_LITLEN:
-                        alldata = self.expand()
-                        self.operations.pop()
-                        prev.data += alldata[-1*op.length:]
+            l_freqs[op.length - 3 + 257] += 1
+            d_freqs[op.distance] += 1
+    l_freqs[256] += 1
+    # XXX TODO: try using extra-bits encoding as used by deflate.
+    # Lit/len tree is generally small enough to include in full.
+    l_codes, l_tree = enhuffen(l_freqs)
+    # The distance tree has a lot of unique entries, so we only
+    # include the most popular and encode the rest directly.
+    # XXX TODO: dynamically decide how many to include.
+    d_top = set()
+    for f,d in sorted(((f,d) for (d,f) in d_freqs.iteritems()), reverse=True):
+        d_top.add(d)
+        if len(d_top) >= 1024:
+            break
+    d_top_freqs = defaultdict(lambda: 0.0)
+    for (d,f) in d_freqs.iteritems():
+        if d in d_top:
+            d_top_freqs[d] = f
+        else:
+            d_top_freqs[0] += f
+    d_top_codes, d_top_tree = enhuffen(d_top_freqs)
+    # Build the final binary string.  This is a giant string of
+    # "1" and "0" chars, which is pretty terrible but is easy to
+    # work with in python.
+    output = []
+    for op in lzops:
+        if isinstance(op, LZLiteral):
+            for c in op.data:
+                output.append(l_codes[ord(c)])
+        else:
+            output.append(l_codes[op.length - 3 + 257])
+            if op.distance in d_top_codes:
+                output.append(d_top_codes[op.distance])
             else:
-                if prev.distance == op.distance:
-                    prev.length += op.length
+                output.append(d_top_codes[0])
+                # Encode in 15 bits; top bit is always zero
+                output.append(bin(op.distance)[2:].rjust(15, "0"))
+    output.append(l_codes[256])
+    output = "".join(output)
+    # Translate each eight bits into an actul byte.
+    final = []
+    for i in xrange(0, len(output), 8):
+        byte = output[i:i+8].ljust(8, "0")
+        final.append(chr(int(byte, 2)))
+    final = "".join(final)
+    return final, l_tree, d_top_tree
+
+
+def enhuffen(frequencies):
+    """Produce huffman encoding for the given symbol:frequency map.
+
+    This function constructs a huffman tree to encode the symbols.  It returns
+    a dict mapping symbols to their corresponding code as a string of "0" and
+    "1" characters, and a string encoding a tree lookup structure for decoding
+    with the tree at runtime.
+
+    All symbols are assumed to fit in 15 bytes, and the tree is encoded for
+    lookup as follows.  Each node of the tree occupies four bytes in the
+    lookup structure.  The first two bytes encoding the child for a "0" and
+    the second two bytes encode the child for a "1".  If the high bit is set
+    on those bytes then it's a leaf node, with the low 15 bits giving the
+    symbol.  If not then it's the offset of the next node in the tree, whose
+    data can be read at offset*2 bytes from the start of the string.
+    """
+    total = sum(f for f in frequencies.itervalues())
+    in_queue = []
+    for c in frequencies:
+        in_queue.append((frequencies[c] / total, [c]))
+    in_queue.sort()
+    queue = []
+    codes = defaultdict(lambda: "")
+
+    def popmin():
+        if not queue:
+            return heapq.heappop(in_queue)
+        if not in_queue:
+            return heapq.heappop(queue)
+        if queue[0][0] < in_queue[0][0]:
+            return heapq.heappop(queue)
+        return heapq.heappop(in_queue)
+
+    while len(in_queue) > 0 or len(queue) > 1:
+        (p1, s1) = popmin()
+        (p2, s2) = popmin()
+        for c in s1:
+            codes[c] = "0" + codes[c]
+        for c in s2:
+            codes[c] = "1" + codes[c]
+        heapq.heappush(queue, (p1 + p2, s1 + s2))
+
+    def encode_symbol(n):
+        assert n < 0x8000, "symbol too big: " + str(n)
+        return chr(n & 0xFF) + chr(0x80 | (n >> 8))
+
+    def encode_subtree(n):
+        assert n < 0x8000, "subtree too big: " + str(n)
+        return chr(n & 0xFF) + chr(n >> 8)
+
+    NULL = encode_subtree(0)
+    tree = [NULL, NULL]
+
+    branch0 = []
+    branch1 = []
+    for symbol, code in codes.iteritems():
+        if code[0] == "0":
+            branch0.append((code[1:], symbol))
+        else:
+            branch1.append((code[1:], symbol))
+    pending_subtrees = [(0, branch0), (1, branch1)]
+
+    while pending_subtrees:
+        (idx, subtree) = pending_subtrees.pop()
+        assert tree[idx] == NULL
+        if len(subtree) == 1:
+            assert subtree[0][0] == ""
+            tree[idx] = encode_symbol(subtree[0][1])
+        else:
+            branch0 = []
+            branch1 = []
+            for code_suffix, symbol in subtree:
+                if code_suffix[0] == "0":
+                    branch0.append((code_suffix[1:], symbol))
                 else:
-                    self.operations.append(LZLiteral(""))
-                    self.operations.append(op)
+                    branch1.append((code_suffix[1:], symbol))
+            tree[idx] = encode_subtree(len(tree))
+            pending_subtrees.append((len(tree), branch0))
+            tree.append(NULL)
+            pending_subtrees.append((len(tree), branch1))
+            tree.append(NULL)
 
-    def iterpairs(self):
-        num_ops = len(self.operations)
-        if num_ops % 2 > 0:
-            num_ops += 1
-        try:
-            for i in xrange(0, num_ops, 2):
-                yield self.operations[i], self.operations[i+1]
-        except IndexError:
-            if i < len(self.operations):
-                yield self.operations[i], None
-            else:
-                yield LZLiteral(""), None
+    return codes, "".join(tree)
 
-    def expand(self):
-        output = []
-        for lit, match in self.iterpairs():
-            if lit.data:
-                output.extend(lit.data)
-            if match is not None:
-                length = match.length
-                while length > 0:
-                    output.append(output[-1 * match.distance])
-                    length -= 1
-        return "".join(output)
-            
 
 class LZLiteral(object):
     """A literal block of characters to include in the stream."""
 
     def __init__(self, data):
+        self.length = len(data)
         self.data = data
 
 
 class LZMatch(object):
-    """A length/distance backreference to include in the stream."""
+    """A length/distance match to include in the stream."""
 
     def __init__(self, length, distance):
         self.length = length
@@ -460,6 +442,45 @@ class HuffmanDecoder(object):
 
         
 
+def merge_lz_operations(lzops):
+    """Merge consecutive LZ operations into single ops if possible."""
+    lzops = iter(lzops)
+    try:
+        prev = lzops.next()
+        while True:
+            cur = lzops.next()
+            if isinstance(cur, LZLiteral):
+                if isinstance(prev, LZLiteral):
+                    prev.data += cur.data
+                else:
+                    yield prev; prev = cur
+            else:
+                if isinstance(prev, LZLiteral):
+                    yield prev; prev = cur
+                else:
+                    if prev.distance == cur.distance:
+                        prev.length += cur.length
+                    else:
+                        yield prev; prev = cur
+    except StopIteration:
+        pass
+
+
+def clamp_lz_operations(lzops, maxlen):
+    """Clamp lengths in lz operations to a maximum value."""
+    for op in lzops:
+        if isinstance(op, LZLiteral):
+            while op.length >= maxlen:
+                yield LZLiteral(op.data[:maxlen-1])
+                op.data = op.data[maxlen-1:]
+            yield op
+        else:
+            while op.length >= maxlen:
+                yield LZMatch(maxlen-3, op.distance)
+                op.length -= maxlen-3
+            yield op
+
+
 def decode_zlib_stream(bits):
     """Decode a zlib bitstream into LZLiteral and LZMatch objects.
 
@@ -497,7 +518,7 @@ def decode_deflate_stream(bits):
         else:
             if BTYPE == 1:
                 h_litlen = DEFAULT_LITLEN_DECODER
-                h_dist = DEFAULT_DIST_DECODER
+                h_dist = DEFAULT_DISTANCE_DECODER
             else:
                 h_litlen, h_dist = decode_huffman_data(bits)
             for c in decode_huffman_block(bits, h_litlen, h_dist):
@@ -582,7 +603,7 @@ def decode_huffman_block(bits, h_litlen, h_dist):
 
 
 def decode_extra_length(bits, length):
-    """Decode extra bits for a backref length symbol."""
+    """Decode extra bits for a match length symbol."""
     if length == 285:
         return 258
     extra = (length - 257) / 4 - 1
@@ -594,7 +615,7 @@ def decode_extra_length(bits, length):
 
 
 def decode_extra_distance(bits, dist):
-    """Decode extra bits for a backref distance symbol."""
+    """Decode extra bits for a match distance symbol."""
     assert dist <= 29
     if dist >= 4:
         extra = (dist - 2) / 2
@@ -605,13 +626,82 @@ def decode_extra_distance(bits, dist):
     return dist
 
 
-DEFAULT_LENGTH_HTREE = HuffmanDecoder(
+DEFAULT_LITLEN_DECODER = HuffmanDecoder(
   ([8] * 144) + ([9] * 112) + ([7] * 24) + ([8] * 8)
 )
 
-DEFAULT_DISTANCE_HTREE = HuffmanDecoder(
+DEFAULT_DISTANCE_DECODER = HuffmanDecoder(
   ([5] * 32)
 )
+
+
+# The following is custom asmjs code to inflat a stream compressed
+# by the `zencode` function above.  It processes the input data
+# one bit at a time, looking up each symbol in the inlne huffman trees.
+
+UNZIP_CODE = """
+  function zmeminit(base, zstart, zend) {
+    base=base|0
+    zstart=zstart|0
+    zend=zend|0
+    var zcur=0,byte=0,bit=0,shift=0,tree=0,node=0,mlen=0,mxbits=0
+    zcur=zstart
+    tree=zstart+{L_TREE_ROOT}|0
+    Z:while(1) {
+      byte={HEAPU8}[zcur]|0
+      zcur=zcur+1|0
+      shift=7
+      while(shift>>0 >= 0) {
+        bit=(byte>>shift) & 0x01
+        shift=shift-1|0
+        if(mxbits>>0 > 0) {
+          node=(node<<1)|bit
+          mxbits=mxbits-1|0
+          if(mxbits>>0 > 0) {
+            continue
+          }
+        } else {
+          node={HEAPU16}[(tree+node+node+bit+bit)>>1]|0
+          if((node & 0x8000) == 0) {
+            continue
+          }
+          node=node & 0x7FFF
+        }
+        if(tree>>0 == zstart+{L_TREE_ROOT}>>0) {
+          if (node>>0 == 256) { break Z }
+          if (node>>0 < 256) {
+            {HEAPU8}[base] = node|0
+            base=base+1|0;
+            node=0
+          } else {
+            mlen=node-257+3|0
+            tree=zstart+{D_TREE_ROOT}|0
+            node=0
+          }
+        } else {
+          if(node>>0 == 0) {
+            // decode extra distance
+            mxbits = 15
+          } else {
+            // Copy match data to output.
+            while(mlen>>0 != 0) {
+              {HEAPU8}[base]={HEAPU8}[(base - node)>>0]|0;
+              base=base+1|0;
+              mlen=mlen-1|0;
+            }
+            tree=zstart+{L_TREE_ROOT}|0
+            node=0
+          }
+        }
+      }
+    }
+    // zero out remaining compressed data
+    while((base|0) < (zend|0)) {
+      {HEAPU8}[base]=0;
+      base=base+1|0;
+    }
+  }
+"""
 
 
 if __name__ == "__main__":
