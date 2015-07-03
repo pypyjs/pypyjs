@@ -40,7 +40,7 @@ We have the following major components in the PyPy repo:
 Along with these wrappers to help working with the resulting interpreter:
 
   * A wrapper to load up the compiled VM and expose it via a nice javascript
-    API: `./lib/pypy.js`.
+    API: `./lib/pypyjs.js`.
   * A script for bundling python modules into an indexed format that can be
     easily loaded into the browser:  `./tools/module_bundler.py`.
 

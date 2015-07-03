@@ -9,16 +9,16 @@ in pure javascript, either in a browser or in a server-side javascript shell.
 Loading the Interpreter
 -----------------------
 
-To create a PyPy.js interpreter, you must load the file `lib/pypy.js`.  This
-will create the global name `PyPyJS` which can be used to instantiate the
+To create a PyPy.js interpreter, you must load the file `lib/pypyjs.js`.  This
+will create the global name `pypyjs` which can be used to instantiate the
 interpreter.  In the browser::
 
     <!-- shim for ES6 `Promise` builtin -->
     <script src="./lib/Promise.min.js" type="text/javascript"></script>
     <script src="./lib/FunctionPromise.js" type="text/javascript"></script>
-    <script src="./lib/pypy.js" type="text/javascript"></script>
+    <script src="./lib/pypyjs.js" type="text/javascript"></script>
     <script type="text/javascript">
-      var vm = new PyPyJS();
+      var vm = new pypyjs();
       vm.ready.then(function() {
         // this callback is fired when the interpreter is ready for use.
       })
@@ -26,8 +26,8 @@ interpreter.  In the browser::
 
 In nodejs or similar environments::
 
-    const PyPyJS = require("./lib/pypy.js");
-    var vm = new PyPyJS();
+    const pypyjs = require("./lib/pypyjs.js");
+    var vm = new pypyjs();
     vm.ready.then(function() {
       // this callback is fired when the interpreter is ready for use.
     })
@@ -36,13 +36,13 @@ The interpreter API is promise-driven, and loads and initializes its resources
 asynchronously.  You must wait for its `ready` promise to be fulfilled before
 attempting to interact with the interpreter.
 
-It is safe to create multiple `PyPyJS` interpreter objects inside a single
+It is safe to create multiple `pypyjs` interpreter objects inside a single
 javascript interpreter.  They will be completely isolated from each other.
 
 You can customize the behaviour of the interpreter by passing an options
-object to the `PyPyJS` constructor, like this::
+object to the `pypyjs` constructor, like this::
 
-    var vm = new PyPyJS({
+    var vm = new pypyjs({
       totalMemory:  256 * 1024 * 1024,
       stdout: function(data) {
         $('#output').innerHTML += data
@@ -282,13 +282,13 @@ Repository Overview
 ~~~~~~~~~~~~~~~~~~~
 
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs`_               | Main repository to built a PyPyJS release                                           |
+| `pypyjs`_               | Main repository to built a PyPy.js release                                           |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypy`_                 | Fork of PyPy with support for compiling to javascript                               |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release`_       | Latest release build of PyPyJS, as a handy git submodule                            |
+| `pypyjs-release`_       | Latest release build of PyPy.js, as a handy git submodule                            |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release-nojit`_ | Latest release build of PyPyJS, without a JIT                                       |
+| `pypyjs-release-nojit`_ | Latest release build of PyPy.js, without a JIT                                       |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypyjs-examples`_      | Examples/snippets usage of `pypyjs-release`_ and `pypyjs-release-nojit`_            |
 +-------------------------+-------------------------------------------------------------------------------------+

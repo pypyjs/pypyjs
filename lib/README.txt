@@ -1,10 +1,10 @@
 
-This directory contains all the files needed to deploy a basic PyPyJS
+This directory contains all the files needed to deploy a basic pypyjs
 environment.  Specifically, we have:
 
-  * pypy.js:           public-facing API to the PyPy VM
-  * pypy.vm.js:        the PyPy VM itself, as built by rpython+emscripten
-  * pypy.vm.js.lzmem:  compressed memory initializer data for the PyPy VM
+  * pypyjs.js:           public-facing API to the PyPy VM
+  * pypyjs.vm.js:        the PyPy VM itself, as built by rpython+emscripten
+  * pypyks.vm.js.zmem:   compressed memory initializer data for the PyPy VM
 
 And the following dependencies, which are distributed in accordance with their
 open-source license:

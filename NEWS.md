@@ -8,7 +8,7 @@ Here you can catch up on the history of the pypyjs project.
 ## 2015-02-23
 [The Emterpreter: Run code before it can be parsed](
 https://blog.mozilla.org/research/2015/02/23/the-emterpreter-run-code-before-it-can-be-parsed/)
--- This may allow us to get pypy.js down to a reasonable size. See [issue #37](https://github.com/rfk/pypyjs/issues/37).
+-- This may allow us to get PyPy.js down to a reasonable size. See [issue #37](https://github.com/rfk/pypyjs/issues/37).
 
 ## 2015-01-28
 [Are we Python yet?](https://www.rfk.id.au/blog/entry/are-we-python-yet/)
