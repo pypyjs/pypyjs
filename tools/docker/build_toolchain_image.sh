@@ -49,7 +49,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# Ensure we're using up-to-date code.
 	cd /build/pypy; git pull; git gc --aggressive
 	# Build it, and link it into system path.
-	python /build/pypy/rpython/bin/rpython --opt=jit --gcrootfinder=shadowstack --cc="gcc -m32" --thread --output=/build/pypy/pypy-c /build/pypy/pypy/goal/targetpypystandalone.py --translationmodules
+	python /build/pypy/rpython/bin/rpython --opt=jit --gcrootfinder=shadowstack --cc="gcc -m32" --thread --no-shared --output=/build/pypy/pypy-c /build/pypy/pypy/goal/targetpypystandalone.py --translationmodules
 	ln -s /build/pypy/pypy-c /usr/bin/pypy
 	# Remove any build and vc files that we don't need at runtime.
 	rm -rf /tmp/usession-* /tmp/ctypes_configure-*
