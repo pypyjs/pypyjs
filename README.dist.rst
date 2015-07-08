@@ -6,71 +6,40 @@ This is a version of the PyPy python interpreter, compiled into javascript
 with emscripten.  It allows you to run a highly-compliant python environment
 in pure javascript, either in a browser or in a server-side javascript shell.
 
-Loading the Interpreter
------------------------
+Using the Interpreter
+---------------------
 
-To create a PyPy.js interpreter, you must load the file `lib/pypy.js`.  This
-will create the global name `PyPyJS` which can be used to instantiate the
-interpreter.  In the browser::
+To use the PyPy.js interpreter, you must load the file `lib/pypyjs.js`.  This
+will create the global name `pypyjs` which represents the interpreter.
+In the browser::
 
     <!-- shim for ES6 `Promise` builtin -->
     <script src="./lib/Promise.min.js" type="text/javascript"></script>
+    <!-- shim for off-main-thread function compilation -->
     <script src="./lib/FunctionPromise.js" type="text/javascript"></script>
-    <script src="./lib/pypy.js" type="text/javascript"></script>
+    <script src="./lib/pypyjs.js" type="text/javascript"></script>
     <script type="text/javascript">
-      var vm = new PyPyJS();
-      vm.ready.then(function() {
+      pypyjs.ready().then(function() {
         // this callback is fired when the interpreter is ready for use.
       })
     </script>
 
 In nodejs or similar environments::
 
-    const PyPyJS = require("./lib/pypy.js");
-    var vm = new PyPyJS();
-    vm.ready.then(function() {
+    const pypyjs = require("./lib/pypyjs.js");
+    pypyjs.ready().then(function() {
       // this callback is fired when the interpreter is ready for use.
     })
 
 The interpreter API is promise-driven, and loads and initializes its resources
-asynchronously.  You must wait for its `ready` promise to be fulfilled before
-attempting to interact with the interpreter.
-
-It is safe to create multiple `PyPyJS` interpreter objects inside a single
-javascript interpreter.  They will be completely isolated from each other.
-
-You can customize the behaviour of the interpreter by passing an options
-object to the `PyPyJS` constructor, like this::
-
-    var vm = new PyPyJS({
-      totalMemory:  256 * 1024 * 1024,
-      stdout: function(data) {
-        $('#output').innerHTML += data
-      },
-    });
-
-The available options are:
-
-    * totalMemory:  the amount of heap memory to allocate for the interpreter,
-                    in bytes
-    * stdin:  function to simulate standard input; should return input chars
-              when called.
-    * stdout:  function to simulate standard output; will be called with
-               output chars.
-    * stderr:  function to simulate standard error; will be called with error
-               output chars.
-    * autoLoadModules:  boolean, whether to automatically load module source
-                        files for import statements (see below).
-
-
-Invoking the Interpreter
-------------------------
+asynchronously.  The `ready()` method returns a promise that will be fulfilled
+when it is ready for use.
 
 There are three core methods available for interacting with the interpreter:
 
-* `vm.exec(code)`:  executes python code in the interpreter's global scope.
-* `vm.set(name, value)`:  sets a variable in the interpreter's global scope.
-* `vm.get(name)`:  copy a variable from the interpreter's global scope.
+* `exec(code)`:  executes python code in the interpreter's global scope.
+* `set(name, value)`:  sets a variable in the interpreter's global scope.
+* `get(name)`:  copy a variable from the interpreter's global scope.
 
 Only primitive value types can be retrieved from the interpreter via `get()`.
 This includes python numbers, strings, lists and dicts, but not custom
@@ -79,12 +48,12 @@ objects.
 The following example evaluates a simple arithmetic expression via Python::
 
     function pyDouble(x) {
-      return vm.ready.then(function() {
-        return vm.set('x', x)  // copes the value of 'x' into python
+      return pypyjs.ready().then(function() {
+        return pypyjs.set('x', x)  // copes the value of 'x' into python
       }).then(function() {
-        return vm.exec('x = x * 2');  // doubles the value in 'x' in python
+        return pypyjs.exec('x = x * 2');  // doubles the value in 'x' in python
       }).then(function() {
-        return vm.get('x')  // copies the value in 'x' out to javascript
+        return pypyjs.get('x')  // copies the value in 'x' out to javascript
       });
     }
 
@@ -96,8 +65,8 @@ The following example evaluates a simple arithmetic expression via Python::
 There is also an `eval()` function that evaluates expessions in the global
 scope, similar to python's `eval()`::
 
-    vm.set('x', 7).then(function() {
-      return vm.eval('x * 3');  // evaluates and copies result to javascript
+    pypyjs.set('x', 7).then(function() {
+      return pypyjs.eval('x * 3');  // evaluates and copies result to javascript
     }).then(function(x) {
       console.log(x);  // prints '21'
     });
@@ -106,7 +75,7 @@ scope, similar to python's `eval()`::
 If you have a python code file to execute, the `execfile()` helper method will
 fetch it and pass it to the interpreter for execution::
 
-    vm.execfile("/path/to/some/file.py");
+    pypyjs.execfile("/path/to/some/file.py");
 
 
 If you'd like to simulate an interactive python console, the helper method
@@ -119,12 +88,12 @@ output::
     var terminal = $('#terminal').jqconsole('', '>>> ');
 
     // Hook up output streams to write to the console.
-    vm.stdout = vm.stderr = function(data) {
+    pypyjs.stdout = pypyjs.stderr = function(data) {
       terminal.Write(data, 'jqconsole-output');
     }
 
     // Interact by taking input from the console prompt.
-    vm.repl(function(ps1) {
+    pypyjs.repl(function(ps1) {
 
       // The argument is ">>> " or "... " depending on REPL state.
       jqconsole.SetPromptLabel(ps1);
@@ -152,7 +121,7 @@ of all available modules and what they import in `./lib/modules/index.json`.
 When you execute some python source code containing import statements, like
 this::
 
-    vm.exec("import json; print json.dumps({'hello': 'world'})")
+    pypyjs.exec("import json; print json.dumps({'hello': 'world'})")
 
 The PyPy.js interpreter shell will do the following:
 
@@ -168,13 +137,13 @@ This will usually work transparently, unless your code does any "hidden"
 imports that cannot be easily detected by scanning the code.  For example,
 the following would defeat the import system::
 
-    vm.exec("json = __import__('json')")  // fails with an ImportError
+    pypyjs.exec("json = __import__('json')")  // fails with an ImportError
 
 To work around this limitation, you can force loading of a particular module
 like so::
 
-    vm.loadModuleData("json").then(function() {
-      return vm.exec("json = __import__('json')")  // works fine
+    pypyjs.loadModuleData("json").then(function() {
+      return pypyjs.exec("json = __import__('json')")  // works fine
     });
 
 To add additional python modules to the distribution, use the script
@@ -278,17 +247,62 @@ go away entirely due to javascript's limited facilities for introspecting the
 garbage collector.
 
 
+Customizing the Interpreter
+---------------------------
+
+You can customize the behaviour of the interpreter by creating a new instance
+of the `pypyjs` object, and passing an options object to the constructor.
+Like this::
+
+    var vm = new pypyjs({
+      totalMemory:  256 * 1024 * 1024,
+      stdout: function(data) {
+        $('#output').innerHTML += data
+      },
+    });
+
+The new instance will be a completely independent interpreter, on which you
+can call all of the methods outlined above::
+
+    vm.ready().then(function() {
+      return vm.set('x', 42)
+    }).then(function() {
+      return vm.exec('x = x * 2')
+    }).then(function() {
+      return vm.get('x')
+    }).then(function(x) {
+      console.log(x);  // prints '84'
+    });
+
+
+It is safe to create multiple `pypyjs` interpreter objects inside a single
+javascript interpreter, and they will be completely isolated from each other.
+
+The available options are:
+
+    * totalMemory:  the amount of heap memory to allocate for the interpreter,
+                    in bytes
+    * stdin:  function to simulate standard input; should return input chars
+              when called.
+    * stdout:  function to simulate standard output; will be called with
+               output chars.
+    * stderr:  function to simulate standard error; will be called with error
+               output chars.
+    * autoLoadModules:  boolean, whether to automatically load module source
+                        files for import statements (see below).
+
+
 Repository Overview
 ~~~~~~~~~~~~~~~~~~~
 
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs`_               | Main repository to built a PyPyJS release                                           |
+| `pypyjs`_               | Main repository to built a PyPy.js release                                           |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypy`_                 | Fork of PyPy with support for compiling to javascript                               |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release`_       | Latest release build of PyPyJS, as a handy git submodule                            |
+| `pypyjs-release`_       | Latest release build of PyPy.js, as a handy git submodule                            |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release-nojit`_ | Latest release build of PyPyJS, without a JIT                                       |
+| `pypyjs-release-nojit`_ | Latest release build of PyPy.js, without a JIT                                       |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypyjs-examples`_      | Examples/snippets usage of `pypyjs-release`_ and `pypyjs-release-nojit`_            |
 +-------------------------+-------------------------------------------------------------------------------------+

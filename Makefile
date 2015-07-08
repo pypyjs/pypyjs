@@ -59,41 +59,41 @@ PYPY = $(DOCKER) pypy
 # The default target puts a built interpreter locally in ./lib.
 
 .PHONY: lib
-lib: ./lib/pypy.vm.js
+lib: ./lib/pypyjs.vm.js
 
-./lib/pypy.vm.js: ./build/pypy.vm.js
-	cp ./build/pypy.vm.js ./lib/
-	python ./tools/extract_memory_initializer.py ./lib/pypy.vm.js
-	python ./tools/compress_memory_initializer.py ./lib/pypy.vm.js
+./lib/pypyjs.vm.js: ./build/pypyjs.vm.js
+	cp ./build/pypyjs.vm.js ./lib/
+	python ./tools/extract_memory_initializer.py ./lib/pypyjs.vm.js
+	python ./tools/compress_memory_initializer.py ./lib/pypyjs.vm.js
 	rm -rf ./lib/modules/
 	python tools/module_bundler.py init ./lib/modules/
 
 # This makes a releasable tarball containing the compiled pypy interpreter,
 # supporting javascript code, and the python stdlib modules and tooling.
 
-VERSION = 0.3.2
+VERSION = 0.4.0
 
 .PHONY: release
-release: ./build/pypy.js-$(VERSION).tar.gz
+release: ./build/pypyjs-$(VERSION).tar.gz
 
 .PHONY: release-nojit
-release-nojit: ./build/pypy-nojit.js-$(VERSION).tar.gz
+release-nojit: ./build/pypyjs-nojit-$(VERSION).tar.gz
 
 .PHONY: release-debug
-release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
+release-debug: ./build/pypyjs-debug-$(VERSION).tar.gz
 
-./build/%.js-$(VERSION).tar.gz: RELNAME = $*.js-$(VERSION)
-./build/%.js-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
-./build/%.js-$(VERSION).tar.gz: ./build/%.vm.js
+./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
+./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
+./build/%-$(VERSION).tar.gz: ./build/%.vm.js
 	mkdir -p $(RELDIR)/lib
 	# Copy the compiled VM and massage it into the expected shape.
-	cp ./build/$*.vm.js $(RELDIR)/lib/pypy.vm.js
-	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
-	python ./tools/compress_memory_initializer.py $(RELDIR)/lib/pypy.vm.js
+	cp ./build/$*.vm.js $(RELDIR)/lib/pypyjs.vm.js
+	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
+	python ./tools/compress_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
 	# Cromulate for better compressibility, unless it's a debug build.
-	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypy.vm.js ; fi
+	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypyjs.vm.js ; fi
 	# Copy the supporting JS library code.
-	cp ./lib/pypy.js ./lib/README.txt ./lib/*Promise*.js $(RELDIR)/lib/
+	cp ./lib/pypyjs.js ./lib/README.txt ./lib/*Promise*.js $(RELDIR)/lib/
 	cp -r ./lib/tests $(RELDIR)/lib/tests
 	# Create an indexed stdlib distribution.
 	python tools/module_bundler.py init $(RELDIR)/lib/modules/
@@ -112,25 +112,25 @@ release-debug: ./build/pypy-debug.js-$(VERSION).tar.gz
 # in "release mode", optimized for deployment to the web.  It trades
 # off some debuggability in exchange for reduced code size.
 
-./build/pypy.vm.js:
+./build/pypyjs.vm.js:
 	mkdir -p build
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
 # This builds a debugging-friendly version that is bigger but has e.g. 
 # more asserts and better traceback information.
 
-./build/pypy-debug.vm.js:
+./build/pypyjs-debug.vm.js:
 	mkdir -p build
-	export EMLDFLAGS="$$EMLDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypy-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	export EMLDFLAGS="$$EMLDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypyjs-debug.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
 # This builds a version of pypy.js without its JIT, which is useful for
 # investigating the size or performance of the core interpreter.
 
-./build/pypy-nojit.vm.js:
+./build/pypyjs-nojit.vm.js:
 	mkdir -p build
-	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypy-nojit.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
+	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs-nojit.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
 # This builds a smaller test program.

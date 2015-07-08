@@ -1,6 +1,6 @@
 {
   "name": "pypyjs",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "author": "Ryan Kelly <ryan@rfk.id.au>",
   "description": "The PyPy Python VM, in JavaScript",
   "keywords": ["python", "pypy", "asmjs", "emscripten", "wtf"],
@@ -10,7 +10,7 @@
   },
   "homepage": "http://pypyjs.org/",
   "bugs": "https://github.com/pypyjs/pypyjs/issues/",
-  "main": "./lib/pypy.js",
+  "main": "./lib/pypyjs.js",
   "files": [
     "lib/",
     "tools/",
