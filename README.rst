@@ -29,13 +29,13 @@ Repository Overview
 ~~~~~~~~~~~~~~~~~~~
 
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs`_               | Main repository to built a PyPy.js release                                           |
+| `pypyjs`_               | Main repository to built a PyPy.js release                                          |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypy`_                 | Fork of PyPy with support for compiling to javascript                               |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release`_       | Latest release build of PyPy.js, as a handy git submodule                            |
+| `pypyjs-release`_       | Latest release build of PyPy.js, as a handy git submodule                           |
 +-------------------------+-------------------------------------------------------------------------------------+
-| `pypyjs-release-nojit`_ | Latest release build of PyPy.js, without a JIT                                       |
+| `pypyjs-release-nojit`_ | Latest release build of PyPy.js, without a JIT                                      |
 +-------------------------+-------------------------------------------------------------------------------------+
 | `pypyjs-examples`_      | Examples/snippets usage of `pypyjs-release`_ and `pypyjs-release-nojit`_            |
 +-------------------------+-------------------------------------------------------------------------------------+
