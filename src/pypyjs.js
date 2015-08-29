@@ -234,10 +234,10 @@ function pypyjs(opts) {
 
   // If we haven't already done so, fetch and load the code for the VM.
   // We do this once and cache the result for re-use, so that we don't
-  // have to pay asmjs compilation over each time we create the VM.
+  // have to pay asmjs compilation overhead each time we create the VM.
 
   if (! pypyjs._vmBuilderPromise) {
-    pypyjs._vmBuilderPromise = this.fetch("pypyjs.vm.js").then((function(xhr) {
+    pypyjs._vmBuilderPromise = this.fetch("pypyjs.vm.js").then((xhr) => {
       // Parse the compiled code, hopefully asynchronously.
       // Unfortunately our use of Function constructor here doesn't
       // play very well with nodejs, where things like 'module' and
@@ -262,13 +262,13 @@ function pypyjs(opts) {
       ].join("");
       return FunctionPromise("Module", "inDependenciesFulfilled", "require",
                              "module", "__filename", "__dirname", funcBody)
-    }).bind(this));
+    });
   }
 
   // Create a new instance of the compiled VM, bound to local state
   // and a local Module object.
 
-  this._ready = new Promise((function(resolve, reject) {
+  this._ready = new Promise((resolve, reject) => {
 
     // Initialize the Module object.
     // We make it available on this object so that we can use
@@ -292,28 +292,28 @@ function pypyjs(opts) {
     Module.noExitRuntime = true;
 
     // Route stdin to an overridable method on the object.
-    var stdin = (function stdin() {
+    var stdin = () => {
       return this.stdin();
-    }).bind(this);
+    };
 
     // Route stdout to an overridable method on the object.
     // We buffer the output for efficiency.
     var stdout_buffer = []
-    var stdout = (function stdout(x) {
+    var stdout = (x) => {
       var c = String.fromCharCode(x);
       stdout_buffer.push(c);
       if (c === "\n" || stdout_buffer.length >= 128) {
         this.stdout(stdout_buffer.join(""));
         stdout_buffer = [];
       }
-    }).bind(this);
+    };
 
     // Route stderr to an overridable method on the object.
     // We do not buffer stderr.
-    var stderr = (function stderr(x) {
+    var stderr = (x) => {
       var c = String.fromCharCode(x);
       this.stderr(c);
-    }).bind(this);
+    };
 
     // This is where execution will continue after loading
     // the memory initialization data, if any.
@@ -345,7 +345,7 @@ function pypyjs(opts) {
     // XXX TODO: also load memory initializer this way.
     var moduleDataP = this.fetch("modules/index.json");
 
-    pypyjs._vmBuilderPromise.then((function(vmBuilder) {
+    pypyjs._vmBuilderPromise.then((vmBuilder) => {
       var args = [
         Module,
         dependenciesFulfilled,
@@ -357,9 +357,9 @@ function pypyjs(opts) {
       // This links the async-compiled module into our Module object.
       vmBuilder.apply(null, args);
       return initializedP;
-    }).bind(this)).then((function() {
+    }).then(() => {
       // Continue with processing the downloaded module metadata.
-      return moduleDataP.then((function(xhr) {
+      return moduleDataP.then((xhr) => {
         // Store the module index, and load any preload modules.
         var modIndex = JSON.parse(xhr.responseText);
         this._allModules = modIndex.modules;
@@ -409,11 +409,10 @@ function pypyjs(opts) {
           }
           Module._free(code);
         });
-      }).bind(this))
-    }).bind(this))
+      });
+    })
     .then(resolve, reject);
-  }).bind(this));
-
+  });
 };
 
 
@@ -423,7 +422,7 @@ function pypyjs(opts) {
 pypyjs.prototype.fetch = function fetch(relpath, responseType) {
   // For the web, use XMLHttpRequest.
   if (typeof XMLHttpRequest !== "undefined") {
-    return new Promise((function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       var xhr = new XMLHttpRequest();
       xhr.onload = function() {
         if (xhr.status >= 400) {
@@ -436,53 +435,42 @@ pypyjs.prototype.fetch = function fetch(relpath, responseType) {
       xhr.open('GET', rootURL + relpath, true);
       xhr.responseType = responseType || "text";
       xhr.send(null);
-    }).bind(this));
+    });
   }
   // For nodejs, use fs.readFile.
   if (typeof fs !== "undefined" && typeof fs.readFile !== "undefined") {
-    return new Promise((function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       var rootURL = this.rootURL || pypyjs.rootURL;
       fs.readFile(path.join(rootURL, relpath), function(err, data) {
         if (err) return reject(err);
         resolve({ responseText: data.toString() });
       });
-    }).bind(this));
+    });
   }
   // For spidermonkey, use snarf (which has a binary read mode).
   if (typeof snarf !== "undefined") {
-    return new Promise((function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       var rootURL = this.rootURL || pypyjs.rootURL;
       var data = snarf(rootURL + relpath);
       resolve({ responseText: data });
-    }).bind(this));
+    });
   }
   // For d8, use read() and readbuffer().
   if (typeof read !== "undefined" && typeof readbuffer !== "undefined") {
-    return new Promise((function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       var rootURL = this.rootURL || pypyjs.rootURL;
       var data = read(rootURL + relpath);
       resolve({ responseText: data });
-    }).bind(this));
+    });
   }
   return new Promise(function(resolve, reject) {
     reject("unable to fetch files");
   });
 };
 
-
-pypyjs.prototype.addModule = function addModule(name, source) {
-   var _this = this;
-   return this.findImportedNames(source).then(function(imports) {
-     _this._allModules[name] = {
-       file: name + ".py",
-       imports: imports
-     };
-     if (!_this.inJsModules) {
-       _this.inJsModules = [];
-     }
-     _this.inJsModules["modules/" + name + ".py"] = source;
-   });
-}
+pypyjs.resolve = function () {
+  console.log("resolve without subscription");
+};
 
 // Method to execute python source directly in the VM.
 //
@@ -554,25 +542,25 @@ pypyjs.prototype.ready = function ready() {
 // Rather you should store it into a variable and then use the get() method.
 //
 pypyjs.prototype.exec = function exec(code) {
-  return this._ready.then((function() {
+  return this._ready.then(() => {
     var p = Promise.resolve();
     // Find any "import" statements in the code,
     // and ensure the modules are ready for loading.
     if (this.autoLoadModules) {
-      p = p.then((function() {
+      p = p.then(() => {
         return this.findImportedNames(code);
-      }).bind(this))
-      .then((function(imports) {
+      })
+      .then((imports) => {
         return this.loadModuleData.apply(this, imports);
-      }).bind(this))
+      })
     }
     // Now we can execute the code in custom top-level scope.
     code = 'exec(\'\'\'' + _escape(code) + '\'\'\', top_level_scope.__dict__)';
-    p = p.then((function() {
+    p = p.then(() => {
       return this._execute_source(code);
-    }).bind(this));
+    });
     return p;
-  }).bind(this));
+  });
 }
 
 
@@ -585,28 +573,22 @@ pypyjs.prototype.exec = function exec(code) {
 // For backwards-compatibility reasons, it will also evaluate statements.
 // This behaviour is deprecated and will be removed in a future release.
 //
-pypyjs.prototype.eval = function eval(expr) {
-  return this._ready.then((function() {
+pypyjs.prototype.eval = function evaluate(expr) {
+  return this._ready.then(() => {
     // First try to execute it as an expression.
     code = "r = eval('" + _escape(expr) + "', top_level_scope.__dict__)";
     return this._execute_source(code);
-  }).bind(this)).then(
-    (function() {
-      // If that succeeded, return the result.
-      return this.get("r", true)
-    }).bind(this),
-    (function(err) {
-      if (err && err.name && err.name !== "SyntaxError") {
-        throw err;
-      }
-      // If that failed, try again via exec().
-      if (typeof console !== "undefined") {
-        console.warn("Calling pypyjs.eval() with statements is deprecated.");
-        console.warn("Use eval() for expressions, exec() for statements.");
-      }
-      return this.exec(expr);
-    }).bind(this)
-  )
+  }).then(() => this.get("r", true), (err) => {
+    if (err && err.name && err.name !== "SyntaxError") {
+      throw err;
+    }
+    // If that failed, try again via exec().
+    if (typeof console !== "undefined") {
+      console.warn("Calling pypyjs.eval() with statements is deprecated.");
+      console.warn("Use eval() for expressions, exec() for statements.");
+    }
+    return this.exec(expr);
+  });
 }
 
 // Method to evaluate some python code from a file..
@@ -614,10 +596,10 @@ pypyjs.prototype.eval = function eval(expr) {
 // This fetches the named file and passes it to the VM for execution.
 //
 pypyjs.prototype.execfile = function execfile(filename) {
-  return this.fetch(filename).then((function(xhr) {
+  return this.fetch(filename).then((xhr) => {
     var code = xhr.responseText;
     return this.exec(code);
-  }).bind(this));
+  });
 }
 
 
@@ -637,7 +619,8 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
   } else {
     var reference = "top_level_scope." + _escape(name);
   }
-  return this._ready.then((function() {
+
+  return this._ready.then(() => {
     // NOTE: This code is embedded in another try/except statement by _execute_source() BUT...
     //       the first indentation is added in that function, AND it uses two-space indentation!
     //       When you change this, put a "console.log()" in _execute_source() to make sure it's right
@@ -647,12 +630,13 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
                "    _pypyjs_getting = js.undefined\n" +
                "  js.globals['pypyjs']._resultsMap['" + resid + "'] = js.convert(_pypyjs_getting)\n" +
                "  del _pypyjs_getting";
+
     return this._execute_source(code);
-  }).bind(this)).then((function() {
+  }).then(() => {
     var res = pypyjs._resultsMap[resid];
     delete pypyjs._resultsMap[resid];
     return res;
-  }).bind(this));
+  });
 }
 
 
@@ -662,13 +646,13 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
 // python variable to reference it via that handle.
 //
 pypyjs.prototype.set = function set(name, value) {
-  return this._ready.then((function() {
+  return this._ready.then(() => {
     var Module = this._module;
     var h = Module._emjs_make_handle(value);
     name = _escape(name);
     var code = "top_level_scope." + name + " = js.Value(" + h + ")";
     return this._execute_source(code);
-  }).bind(this));
+  });
 }
 
 
@@ -743,60 +727,48 @@ pypyjs.prototype.repl = function repl(prmpt) {
             });
           }
           slurp();
-        }).bind(this));
-      }).bind(this);
+        });
+      };
     }
   }
   // Set up an InteractiveConsole instance,
   // then loop forever via recursive promises.
-  return this._ready.then((function() {
-    return this.loadModuleData("code");
-  }).bind(this)).then((function() {
-    return this._execute_source("import code");
-  }).bind(this)).then((function() {
-    return this._execute_source("c = code.InteractiveConsole(top_level_scope.__dict__)");
-  }).bind(this)).then((function() {
-    return this._repl_loop(prmpt, ">>> ");
-  }).bind(this));
+  return this._ready
+    .then(() => this.loadModuleData("code"))
+    .then(() => this._execute_source("import code"))
+    .then(() => this._execute_source("c = code.InteractiveConsole(top_level_scope.__dict__)"))
+    .then(() => this._repl_loop(prmpt, ">>> "));
 }
 
 
 pypyjs.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
-  return Promise.resolve().then((function() {
-    // Prompt for input, which may happen via async promise.
-    return prmpt.call(this, ps1);
-  }).bind(this)).then((function(input) {
-    // Push it into the InteractiveConsole, a line at a time.
-    var p = Promise.resolve();
-    input.split("\n").forEach((function(line) {
-      // Find any "import" statements in the code,
-      // and ensure the modules are ready for loading.
-      if (this.autoLoadModules) {
-        p = p.then((function() {
-          return this.findImportedNames(line);
-        }).bind(this))
-        .then((function(imports) {
-          return this.loadModuleData.apply(this, imports);
-        }).bind(this))
+  // Prompt for input, which may happen via async promise.
+  return Promise.resolve()
+    .then(() => prmpt.call(this, ps1))
+    .then((input) => {
+      // Push it into the InteractiveConsole, a line at a time.
+      var p = Promise.resolve();
+      input.split("\n").forEach((line) => {
+        // Find any "import" statements in the code,
+        // and ensure the modules are ready for loading.
+        if (this.autoLoadModules) {
+          p = p.then(() => this.findImportedNames(line))
+               .then((imports) => this.loadModuleData.apply(this, imports));
+        }
+        var code = 'r = c.push(\'' + _escape(line) + '\')';
+        p = p.then(() => this._execute_source(code));
+      });
+      return p;
+    }).then(() => this.get("r", true))
+      .then((r) => {
+      // If r == 1, we're in a multi-line definition.
+      // Adjust the prompt accordingly.
+      if (r) {
+        return this._repl_loop(prmpt, "... ");
+      } else {
+        return this._repl_loop(prmpt, ">>> ");
       }
-      var code = 'r = c.push(\'' + _escape(line) + '\')';
-      p = p.then((function() {
-        return this._execute_source(code);
-      }).bind(this));
-    }).bind(this));
-    return p;
-  }).bind(this)).then((function() {
-    // Check the result from the final push.
-    return this.get("r", true)
-  }).bind(this)).then((function(r) {
-    // If r == 1, we're in a multi-line definition.
-    // Adjust the prompt accordingly.
-    if (r) {
-      return this._repl_loop(prmpt, "... ");
-    } else {
-      return this._repl_loop(prmpt, ">>> ");
-    }
-  }).bind(this));
+    });
 }
 
 
@@ -846,7 +818,7 @@ pypyjs.prototype.loadModuleData = function loadModuleData(/* names */) {
   // We must find the longest prefix that is an available module
   // and load it along with all its dependencies.
   var modules = Array.prototype.slice.call(arguments);
-  return this._ready.then((function() {
+  return this._ready.then(() => {
     var toLoad = {};
     NEXTNAME: for (var i = 0; i < modules.length; i++) {
       var name = modules[i];
@@ -864,12 +836,11 @@ pypyjs.prototype.loadModuleData = function loadModuleData(/* names */) {
     // Now ensure that each module gets loaded.
     var loadPromises = [];
     for (var name in toLoad) {
-      loadPromises.push(this._makeLoadModuleData(name)());
+      loadPromises.push(this._loadModuleData(name));
     }
     return Promise.all(loadPromises);
-  }).bind(this));
+  });
 }
-
 
 pypyjs.prototype._findModuleDeps = function _findModuleDeps(name, seen) {
   if (!seen) seen = {};
@@ -904,32 +875,29 @@ pypyjs.prototype._findModuleDeps = function _findModuleDeps(name, seen) {
   return seen;
 }
 
-
-pypyjs.prototype._makeLoadModuleData = function _makeLoadModuleData(name) {
-  return (function() {
-    // If we've already loaded this module, we're done.
-    if (this._loadedModules[name]) {
-      return Promise.resolve();
-    }
-    // If we're already in the process of loading it, use the existing promise.
-    if (this._pendingModules[name]) {
-      return this._pendingModules[name];
-    }
-    // If it's a package directory, there's not actually anything to do.
-    if (this._allModules[name].dir) {
-      return Promise.resolve();
-    }
-    // We need to fetch the module file and write it out.
-    var modfile = this._allModules[name].file;
-    var p = this.fetch("modules/" + modfile)
-    .then((function(xhr) {
-      var contents = xhr.responseText;
-      this._writeModuleFile(name, contents)
-      delete this._pendingModules[name];
-    }).bind(this))
-    this._pendingModules[name] = p;
-    return p;
-  }).bind(this);
+pypyjs.prototype._loadModuleData = function _loadModuleData(name) {
+  // If we've already loaded this module, we're done.
+  if (this._loadedModules[name]) {
+    return Promise.resolve();
+  }
+  // If we're already in the process of loading it, use the existing promise.
+  if (this._pendingModules[name]) {
+    return this._pendingModules[name];
+  }
+  // If it's a package directory, there's not actually anything to do.
+  if (this._allModules[name].dir) {
+    return Promise.resolve();
+  }
+  // We need to fetch the module file and write it out.
+  var modfile = this._allModules[name].file;
+  var p = this.fetch("modules/" + modfile)
+  .then((xhr) => {
+    var contents = xhr.responseText;
+    this._writeModuleFile(name, contents)
+    delete this._pendingModules[name];
+  });
+  this._pendingModules[name] = p;
+  return p;
 }
 
 

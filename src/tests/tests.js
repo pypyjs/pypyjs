@@ -60,7 +60,7 @@ var pypyjsTestResult = vm.ready()
 })
 .then(function(x) {
   if (x !== 15) {
-    throw new Error("eval failed");
+    throw new Error('eval failed');
   }
 })
 
@@ -70,8 +70,8 @@ var pypyjsTestResult = vm.ready()
   return vm.get("nonExistentName")
 })
 .then(function(x) {
-  if (typeof x !== "undefined") {
-    throw new Error("name should have been undefined");
+  if (typeof x !== 'undefined') {
+    throw new Error('name should have been undefined');
   }
 })
 // - for globals()
@@ -151,9 +151,11 @@ var pypyjsTestResult = vm.ready()
 
 // Report success or failure at the end of the chain.
 .then(function(res) {
-  log("TESTS PASSED!");
-}, function(err) {
-  log("TESTS FAILED!");
+  log('TESTS PASSED!');
+},
+
+function(err) {
+  log('TESTS FAILED!');
   log(err);
   throw err;
 });
