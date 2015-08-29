@@ -8,4 +8,4 @@ lib/modules/
 lib/pypyjs.vm.*
 node_modules/
 lib/pypyjs.*
-lib/tests.*
+lib/tests/tests.*
