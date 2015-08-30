@@ -1,0 +1,15 @@
+{
+  "extends": "airbnb",
+  "node": true,
+  "browser": true,
+  "rules": {
+    "no-console": 0,
+    "comma-dangle": 0,
+    "new-cap": 0,
+    "camelcase": 0
+  },
+  "globals": {
+    "Promise": true,
+    "FunctionPromise": true
+  }
+}
