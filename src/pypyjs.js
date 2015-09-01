@@ -588,6 +588,37 @@ pypyjs.prototype.exec = function exec(code) {
   });
 };
 
+// Method to reinitialize the global scope without reloading the vm.
+pypyjs.prototype.reInit = function reInit() {
+  const Module = this._module;
+  return new Promise((resolve) => {
+    // code to exec
+    const initCode =
+    	 'top_level_scope = {\'__name__\': \'__main__\'}';
+    // make c string
+    let code = Module.intArrayFromString(initCode);
+    // alloc
+    code = Module.allocate(code, 'i8', vm._module.ALLOC_NORMAL);
+
+    if (!code) {
+      throw new pypyjs.Error('Failed to allocate memory');
+    }
+
+    Module.resolve = () => {
+      resolve();
+    };
+
+    // exec
+    const res = Module._pypy_execute_source(code);
+
+    if (res < 0) {
+      throw new pypyjs.Error('Failed to execute python code');
+    }
+
+    Module._free(code);
+  });
+};
+
 // Method to evaluate an expression.
 //
 // This method evaluates an expression and returns its value (assuming the
