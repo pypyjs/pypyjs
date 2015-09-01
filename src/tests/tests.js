@@ -124,6 +124,17 @@ var pypyjsTestResult = vm.ready()
           if (typeof y !== 'undefined') {
             throw new Error('name should have been undefined in new VM');
           }
+        })
+        .then(() => vm2.reInit())
+        .then(() => vm2.get('x'))
+        .then(() => { throw new Exception('x should not exist'); }, (err) => {
+          if (!err instanceof pypyjs.Error) {
+            throw new Error('Python exception didn\'t trigger vm.Error instance');
+          }
+
+          if (err.name !== 'NameError' || err.message !== 'x') {
+            throw new Error('Python exception didn\'t trigger correct error info');
+          }
         });
 })
 
