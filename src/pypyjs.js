@@ -1,4 +1,4 @@
-//
+
 //  pypyjs:  an experimental in-browser python environment.
 //
 
@@ -155,8 +155,8 @@ if (typeof console !== 'undefined') {
 if (stdio.stdout === null && typeof _print !== 'undefined') {
   // print()/console.log() will add a newline, so we buffer until we
   // receive one and then let it add it for us.
+  const buffer = [];
   stdio.stdout = function stdout(data) {
-    const buffer = [];
     for (let i = 0; i < data.length; i++) {
       const x = data.charAt(i);
       if (x !== '\n') {
@@ -172,8 +172,8 @@ if (stdio.stdout === null && typeof _print !== 'undefined') {
 if (stdio.stderr === null && typeof _printErr !== 'undefined') {
   // printErr()/console.error() will add a newline, so we buffer until we
   // receive one and then let it add it for us.
+  const buffer = [];
   stdio.stderr = function stderr(data) {
-    const buffer = [];
     for (let i = 0; i < data.length; i++) {
       const x = data.charAt(i);
       if (x !== '\n') {
@@ -199,9 +199,9 @@ if (stdio.stderr === null) {
 
 function pypyjs(opts) {
   const _opts = opts || {};
-  this.rootURL = opts.rootURL;
-  this.totalMemory = opts.totalMemory || 128 * 1024 * 1024;
-  this.autoLoadModules = opts.autoLoadModules || true;
+  this.rootURL = _opts.rootURL;
+  this.totalMemory = _opts.totalMemory || 128 * 1024 * 1024;
+  this.autoLoadModules = _opts.autoLoadModules || true;
   this._pendingModules = {};
   this._loadedModules = {};
   this._allModules = {};
@@ -293,9 +293,9 @@ function pypyjs(opts) {
     let stdoutBuffer = [];
     const stdout = (x) => {
       const c = String.fromCharCode(x);
-      stdout_buffer.push(c);
+      stdoutBuffer.push(c);
       if (c === '\n' || stdoutBuffer.length >= 128) {
-        this.stdout(stdout_buffer.join(''));
+        this.stdout(stdoutBuffer.join(''));
         stdoutBuffer = [];
       }
     };
@@ -804,33 +804,31 @@ pypyjs.prototype._repl_loop = function _repl_loop(prmpt, ps1) {
 const importStatementRE = /(from\s+([a-zA-Z0-9_\.]+)\s+)?import\s+\(?\s*([a-zA-Z0-9_\.\*]+(\s+as\s+[a-zA-Z0-9_]+)?[ \t]*,?[ \t]*)+[ \t]*\)?/g;
 pypyjs.prototype.findImportedNames = function findImportedNames(code) {
   const imports = [];
+  let match;
   importStatementRE.lastIndex = 0;
-  const matches = code.match(importStatementRE);
-  if (matches) {
-    matches.forEach((match) => {
-      let relmod = match[2];
-      if (relmod) {
-        relmod = relmod + '.';
-      } else {
-        relmod = '';
-      }
+  while ((match = importStatementRE.exec(code)) !== null) {
+    let relmod = match[2];
+    if (relmod) {
+      relmod = relmod + '.';
+    } else {
+      relmod = '';
+    }
 
-      let submods = match[0].split('import')[1];
-      while (submods && /[\s(]/.test(submods.charAt(0))) {
-        submods = submods.substr(1);
-      }
+    let submods = match[0].split('import')[1];
+    while (submods && /[\s(]/.test(submods.charAt(0))) {
+      submods = submods.substr(1);
+    }
 
-      while (submods && /[\s)]/.test(submods.charAt(submods.length - 1))) {
-        submods = submods.substr(0, submods.length - 1);
-      }
+    while (submods && /[\s)]/.test(submods.charAt(submods.length - 1))) {
+      submods = submods.substr(0, submods.length - 1);
+    }
 
-      submods = submods.split(/\s*,\s*/);
-      for (let i = 0; i < submods.length; i++) {
-        let submod = submods[i];
-        submod = submod.split(/\s*as\s*/)[0];
+    submods = submods.split(/\s*,\s*/);
+    for (let i = 0; i < submods.length; i++) {
+      let submod = submods[i];
+      submod = submod.split(/\s*as\s*/)[0];
         imports.push(relmod + submod);
-      }
-    });
+    }
   }
   return Promise.resolve(imports);
 };
@@ -874,7 +872,7 @@ pypyjs.prototype._findModuleDeps = function _findModuleDeps(name, seen) {
 
   // If we don't know about this module, ignore it.
   if (!this._allModules[name]) {
-    return seen_;
+    return _seen;
   }
 
   // Depend on any explicitly-named imports.
@@ -899,7 +897,7 @@ pypyjs.prototype._findModuleDeps = function _findModuleDeps(name, seen) {
   // Recurse for any previously-unseen dependencies.
   _seen[name] = true;
   for (let i = 0; i < deps.length; i++) {
-    if (!seen_[deps[i]]) {
+    if (!_seen[deps[i]]) {
       this._findModuleDeps(deps[i], _seen);
     }
   }
@@ -962,10 +960,10 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
 // XXX TODO: this could be a lot more user-friendly than a opaque error...
 
 pypyjs.Error = function pypyjsError(name, message, trace) {
-  let message_;
-  let name_;
-  if (name && typeof message === 'undefined') {
-    message_ = name;
+  let message_ = message;
+  let name_ = name;
+  if (name_ && typeof message_ === 'undefined') {
+    message_ = name_;
     name_ = '';
   }
 
