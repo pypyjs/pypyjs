@@ -598,7 +598,7 @@ pypyjs.prototype.reInit = function reInit() {
     // make c string
     let code = Module.intArrayFromString(initCode);
     // alloc
-    code = Module.allocate(code, 'i8', vm._module.ALLOC_NORMAL);
+    code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
 
     if (!code) {
       throw new pypyjs.Error('Failed to allocate memory');
