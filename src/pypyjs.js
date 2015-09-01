@@ -314,7 +314,7 @@ function pypyjs(opts) {
     });
 
     let FS;
-    let dependenciesFulfilled = function depsFulfilled(_fs) {
+    const dependenciesFulfilled = function depsFulfilled(_fs) {
       FS = _fs;
 
       // Initialize the filesystem state.
@@ -827,7 +827,7 @@ pypyjs.prototype.findImportedNames = function findImportedNames(code) {
     for (let i = 0; i < submods.length; i++) {
       let submod = submods[i];
       submod = submod.split(/\s*as\s*/)[0];
-        imports.push(relmod + submod);
+      imports.push(relmod + submod);
     }
   }
   return Promise.resolve(imports);
