@@ -984,6 +984,10 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   const arr = new Uint8Array(len);
   Module.stringToUTF8Array(data, arr, 0, len + 1);
   this.FS.unlink(fullpath);
+  try {
+    this.FS.unlink(fullpath);
+  } catch (e) {
+  }
   Module.FS_createDataFile(fullpath, '', arr, true, false, true);
   this._loadedModules[name] = true;
 };
