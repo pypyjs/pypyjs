@@ -313,18 +313,17 @@ function pypyjs(opts) {
       initializedReject = _reject;
     });
 
-    let FS;
-    const dependenciesFulfilled = function depsFulfilled(_fs) {
-      FS = _fs;
+    const dependenciesFulfilled = (_fs) => {
+      this.FS = _fs;
 
       // Initialize the filesystem state.
       try {
-        FS.init(stdin, stdout, stderr);
-        Module.FS_createPath("/", "lib/pypyjs/lib_pypy", true, false);
+        this.FS.init(stdin, stdout, stderr);
+        Module.FS_createPath('/', 'lib/pypyjs/lib_pypy', true, false);
         // Hackery so the same file will work with py2 and py3.
         // We only ever put our module files into lib_pypy.
-        Module.FS_createPath("/", "lib/pypyjs/lib-python/2.7", true, false);
-        Module.FS_createPath("/", "lib/pypyjs/lib-python/3", true, false);
+        Module.FS_createPath('/', 'lib/pypyjs/lib-python/2.7', true, false);
+        Module.FS_createPath('/', 'lib/pypyjs/lib-python/3', true, false);
         initializedResolve();
       } catch (err) {
         initializedReject(err);
@@ -480,6 +479,7 @@ pypyjs.prototype.addModuleFromFile = function addModule(name, file) {
 
 pypyjs.prototype.addModule = function addModule(name, source) {
   return this.findImportedNames(source).then((imports) => {
+    this._loadedModules[name] = null;
     this._allModules[name] = {
       file: `${name}.py`,
       imports
@@ -983,6 +983,7 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   const len = Module.lengthBytesUTF8(data);
   const arr = new Uint8Array(len);
   Module.stringToUTF8Array(data, arr, 0, len + 1);
+  this.FS.unlink(fullpath);
   Module.FS_createDataFile(fullpath, '', arr, true, false, true);
   this._loadedModules[name] = true;
 };
