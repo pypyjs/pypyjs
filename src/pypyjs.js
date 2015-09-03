@@ -496,6 +496,8 @@ pypyjs.prototype.addModule = function addModule(name, source) {
   });
 };
 
+
+
 // Method to execute python source directly in the VM.
 //
 // This is the basic way to push code into the pypyjs VM.
@@ -509,8 +511,8 @@ pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
     preCode = "";
   }
   return new Promise(function promise(resolve) {
-    const _code = `${preCode}
-try:
+    const _code = `try:
+  ${_blockIndent(preCode, '  ')}
   ${code}
 except Exception:
   typ, val, tb = sys.exc_info()
@@ -518,7 +520,6 @@ except Exception:
   err_msg = str(val)
   err_trace = traceback.format_exception(typ, val, tb)
   err_trace = ''.join(err_trace)
-  print err_name
   js.globals['pypyjs']._lastErrorName = err_name
   js.globals['pypyjs']._lastErrorMessage = err_msg
   js.globals['pypyjs']._lastErrorTrace = err_trace
@@ -552,6 +553,11 @@ except Exception:
     resolve(null);
   });
 };
+
+
+function _blockIndent(code, indent) {
+  return code.replace(/\n/g, `\n${indent}`);
+}
 
 function _escape(value) {
   return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
@@ -598,10 +604,11 @@ pypyjs.prototype.exec = function exec(code) {
       //   import sys
       //   if 'foo' in sys.modules: del(sys.modules['foo'])
       // ```
-      preCode = 'import sys\n';
+      preCode = 'try:\n  import sys\n';
       for (let module of Object.keys(this._modulesToReset)) {
-        preCode += `if '${module}' in sys.modules: del(sys.modules['${module}'])\n`;
+        preCode += `  if '${module}' in sys.modules: del(sys.modules['${module}'])\n`;
       }
+      preCode += `except:\n  raise SystemError('Failed to reload custom modules')`;
       this._modulesToReset = {};
     }
 
