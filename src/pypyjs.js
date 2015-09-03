@@ -524,6 +524,7 @@ except Exception:
   err_name = getattr(typ, '__name__', str(typ))
   err_msg = str(val)
   err_trace = traceback.format_exception(typ, val, tb)
+  err_trace = err_trace[:1] + err_trace[2:]
   err_trace = ''.join(err_trace)
   js.globals['pypyjs']._lastErrorName = err_name
   js.globals['pypyjs']._lastErrorMessage = err_msg
@@ -575,7 +576,7 @@ pypyjs.prototype.ready = function ready() {
 // It is not possible to directly access the result of the code, if any.
 // Rather you should store it into a variable and then use the get() method.
 //
-pypyjs.prototype.exec = function exec(code) {
+pypyjs.prototype.exec = function exec(code, options) {
   return this._ready.then(() => {
     let p = Promise.resolve();
     let preCode;
@@ -609,7 +610,9 @@ pypyjs.prototype.exec = function exec(code) {
     }
 
     // Now we can execute the code in custom top-level scope.
-    const _code = `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
+    const code_ = (options && options.file)
+      ? `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`
+      : `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
     p = p.then(() => {
       return this._execute_source(_code, preCode);
     });
@@ -623,7 +626,7 @@ pypyjs.prototype.reInit = function reInit() {
   return new Promise((resolve) => {
     // code to exec
     const initCode =
-    	 'top_level_scope = {\'__name__\': \'__main__\'}';
+        'top_level_scope = {\'__name__\': \'__main__\'}';
     // make c string
     let code = Module.intArrayFromString(initCode);
     // alloc
@@ -682,9 +685,13 @@ pypyjs.prototype.eval = function evaluate(expr) {
 // This fetches the named file and passes it to the VM for execution.
 //
 pypyjs.prototype.execfile = function execfile(filename) {
-  return this.fetch(filename).then((xhr) => {
+  const path = this.inJsModules[`modules/${filename}`]
+    ? `modules/${filename}`
+    : filename;
+
+  return this.fetch(path).then((xhr) => {
     const code = xhr.responseText;
-    return this.exec(code);
+    return this.exec(code, {file:`/lib/pypyjs/lib_pypy/${filename}`});
   });
 };
 
