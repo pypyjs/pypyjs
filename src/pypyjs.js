@@ -496,7 +496,13 @@ pypyjs.prototype.addModule = function addModule(name, source) {
   });
 };
 
+function _blockIndent(code, indent) {
+  return code.replace(/\n/g, `\n${indent}`);
+}
 
+function _escape(value) {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
+}
 
 // Method to execute python source directly in the VM.
 //
@@ -506,13 +512,12 @@ pypyjs.prototype.addModule = function addModule(name, source) {
 //
 pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
   const Module = this._module;
+  const _preCode = preCode ? preCode : '';
   let code_ptr;
-  if (!preCode) {
-    preCode = "";
-  }
+
   return new Promise(function promise(resolve) {
     const _code = `try:
-  ${_blockIndent(preCode, '  ')}
+  ${_blockIndent(_preCode, '  ')}
   ${code}
 except Exception:
   typ, val, tb = sys.exc_info()
@@ -554,15 +559,6 @@ except Exception:
   });
 };
 
-
-function _blockIndent(code, indent) {
-  return code.replace(/\n/g, `\n${indent}`);
-}
-
-function _escape(value) {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
-}
-
 // Method to determine when the interpreter is ready.
 //
 // This method returns a promise that will resolve once the interpreter
@@ -582,7 +578,7 @@ pypyjs.prototype.ready = function ready() {
 pypyjs.prototype.exec = function exec(code) {
   return this._ready.then(() => {
     let p = Promise.resolve();
-    let preCode = '';
+    let preCode;
 
     // Find any "import" statements in the code,
     // and ensure the modules are ready for loading.
@@ -604,11 +600,11 @@ pypyjs.prototype.exec = function exec(code) {
       //   import sys
       //   if 'foo' in sys.modules: del(sys.modules['foo'])
       // ```
-      preCode = 'try:\n  import sys\n';
-      for (let module of Object.keys(this._modulesToReset)) {
-        preCode += `  if '${module}' in sys.modules: del(sys.modules['${module}'])\n`;
-      }
-      preCode += `except:\n  raise SystemError('Failed to reload custom modules')`;
+      const modulesToLoad =
+        Object.keys(this._modulesToReset)
+          .map(mod => `  if '${mod}' in sys.modules: del(sys.modules['${mod}'])\n`);
+
+      preCode = `try:\n  import sys\n  ${modulesToLoad}\nexcept:\n  raise SystemError('Failed to reload custom modules')`;
       this._modulesToReset = {};
     }
 
@@ -1020,6 +1016,10 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   try {
     this.FS.unlink(fullpath);
   } catch (e) {
+    // ignore error
+    if (e) {
+      console.log(e);
+    }
   }
   Module.FS_createDataFile(fullpath, '', arr, true, false, true);
   this._loadedModules[name] = true;
