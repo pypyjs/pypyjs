@@ -602,9 +602,9 @@ pypyjs.prototype.exec = function exec(code) {
       // ```
       const modulesToLoad =
         Object.keys(this._modulesToReset)
-          .map(mod => `  if '${mod}' in sys.modules: del(sys.modules['${mod}'])\n`);
+          .map(mod => `if '${mod}' in sys.modules: del(sys.modules['${mod}'])`);
 
-      preCode = `try:\n  import sys\n${modulesToLoad}\nexcept:\n  raise SystemError('Failed to reload custom modules')`;
+      preCode = `try:\n  import sys\n  ${modulesToLoad.join('\n  ')}\nexcept:\n  raise SystemError('Failed to reload custom modules')`;
       this._modulesToReset = {};
     }
 
