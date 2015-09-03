@@ -205,6 +205,7 @@ function pypyjs(opts) {
   this._pendingModules = {};
   this._loadedModules = {};
   this._allModules = {};
+  this._modulesToReset = {};
 
   // Allow opts to override default IO streams.
   this.stdin = _opts.stdin || stdio.stdin;
@@ -479,7 +480,11 @@ pypyjs.prototype.addModuleFromFile = function addModule(name, file) {
 
 pypyjs.prototype.addModule = function addModule(name, source) {
   return this.findImportedNames(source).then((imports) => {
-    this._loadedModules[name] = null;
+    // keep track of any modules that have been previously loaded
+    if (this._loadedModules[name]) {
+      this._modulesToReset[name] = true;
+      this._loadedModules[name] = null;
+    }
     this._allModules[name] = {
       file: `${name}.py`,
       imports
@@ -497,11 +502,15 @@ pypyjs.prototype.addModule = function addModule(name, source) {
 // Calling code should not use it directly; rather we use it
 // as a primitive to build up a nicer execution API.
 //
-pypyjs.prototype._execute_source = function _execute_source(code) {
+pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
   const Module = this._module;
   let code_ptr;
-  return new Promise(function promise(resolve, reject) {
-    const _code = `try:
+  if (!preCode) {
+    preCode = "";
+  }
+  return new Promise(function promise(resolve) {
+    const _code = `${preCode}
+try:
   ${code}
 except Exception:
   typ, val, tb = sys.exc_info()
@@ -567,6 +576,7 @@ pypyjs.prototype.ready = function ready() {
 pypyjs.prototype.exec = function exec(code) {
   return this._ready.then(() => {
     let p = Promise.resolve();
+    let preCode = '';
 
     // Find any "import" statements in the code,
     // and ensure the modules are ready for loading.
@@ -579,10 +589,26 @@ pypyjs.prototype.exec = function exec(code) {
       });
     }
 
+    // if any modules have been re-added then we need to remove them from
+    // sys.modules which clears them from memory and allows them to be reloaded
+    // from the emscripten file system
+    if (Object.keys(this._modulesToReset).length) {
+      // construct python code to remove module from sys.modules:
+      // ```python
+      //   import sys
+      //   if 'foo' in sys.modules: del(sys.modules['foo'])
+      // ```
+      preCode = 'import sys\n';
+      for (let module of Object.keys(this._modulesToReset)) {
+        preCode += `if '${module}' in sys.modules: del(sys.modules['${module}'])\n`;
+      }
+      this._modulesToReset = {};
+    }
+
     // Now we can execute the code in custom top-level scope.
     const _code = `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
     p = p.then(() => {
-      return this._execute_source(_code);
+      return this._execute_source(_code, preCode);
     });
     return p;
   });
