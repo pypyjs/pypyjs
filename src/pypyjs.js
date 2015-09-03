@@ -286,6 +286,10 @@ function pypyjs(opts) {
 
     // Route stdin to an overridable method on the object.
     const stdin = () => {
+      if (stdoutBuffer.length) {
+        this.stdout(stdoutBuffer.join(''));
+        stdoutBuffer = [];
+      }
       return this.stdin();
     };
 
