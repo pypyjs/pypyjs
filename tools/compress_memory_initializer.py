@@ -115,8 +115,7 @@ def compress_memory_file(source_filename):
             HEAPU16 = match.group(1)
 
             # Add an function to the asmjs module that will decompress the
-            # memory data in-place.  Yes, this is raw hand-written asmjs for
-            # an LZ4 style decompressor, which is astonishingly compact.
+            # memory data in-place.  It's a hand-written asmjs decompressor.
 
             r = re.compile(r"}\s*// EMSCRIPTEN_END_FUNCS", re.MULTILINE)
             match = r.search(jsdata)
@@ -153,12 +152,16 @@ def compress_memory_file(source_filename):
             # end.  This allows it to be decompressed in-place without
             # the possibility of overwriting un-processed data.
 
-            zset = "HEAPU8.set(data, STATIC_BASE+{zstart});"
-            zset += "asm[\"zmeminit\"](STATIC_BASE,"
-            zset += "STATIC_BASE+{zstart},STATIC_BASE+{zend})"
-            jsdata = re.sub(r"HEAPU8.set\(data,STATIC_BASE\)", zset.format(
-              zstart=len(memdata),
-              zend=len(memdata) + zmemsize,
+            zset = "HEAPU8.set(data, Runtime.GLOBAL_BASE+{zstart});"
+            zset += "asm[\"zmeminit\"](Runtime.GLOBAL_BASE,"
+            zset += "Runtime.GLOBAL_BASE+{zstart},Runtime.GLOBAL_BASE+{zend})"
+            zstart = len(memdata)
+            if zstart % 2 == 1:
+                zstart += 1
+            assert zmemsize % 2 == 0
+            jsdata = re.sub(r"HEAPU8.set\(data,\s*Runtime.GLOBAL_BASE\)", zset.format(
+              zstart=zstart,
+              zend=zstart + zmemsize,
             ), jsdata)
             output_file.write(jsdata)
 
