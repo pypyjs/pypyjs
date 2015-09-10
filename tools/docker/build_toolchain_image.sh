@@ -58,7 +58,6 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 /usr/bin/emcc: /usr/bin/node
 	mkdir -p /build
-	mkdir -p /build
 	mkdir -p /var/cache/emscripten/cache
 	chmod -R 777 /var/cache/emscripten
 	# Fetch all the necessary repos.
