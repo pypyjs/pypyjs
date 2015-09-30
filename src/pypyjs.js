@@ -478,7 +478,7 @@ pypyjs.prototype.fetch = function fetch(relpath, responseType) {
   });
 };
 
-pypyjs.prototype.addModuleFromFile = function addModule(name, file) {
+pypyjs.prototype.addModuleFromFile = function addModuleFromFile(name, file) {
   return this.fetch(file).then((data) => this.addModule(name, data.responseText));
 };
 
@@ -695,7 +695,8 @@ pypyjs.prototype.execfile = function execfile(filename) {
 
   return this.fetch(path).then((xhr) => {
     const code = xhr.responseText;
-    return this.exec(code, {file:`/lib/pypyjs/lib_pypy/${filename}`});
+
+    return this.exec(code, { file: `/lib/pypyjs/lib_pypy/${filename}` });
   });
 };
 
