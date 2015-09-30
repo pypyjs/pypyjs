@@ -45,6 +45,7 @@ PYPY_ROOT = os.path.join(
 BUILTIN_MODULES = [
     "__builtin__",
     "__pypy__",
+    "__main__",
     "_ast",
     "_codecs",
     "_collections",
