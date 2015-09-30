@@ -100,7 +100,9 @@ var pypyjsTestResult = vm.ready()
 // Check that multi-import statements will work correctly.
 .then(function() {
   return vm.exec("import os\nimport time\nimport sys\nx=time.time()")
-})// Check that multi-import statements will work correctly.
+})
+
+// Check that multi-import statements will work correctly.
 .then(() => vm.exec('import os\nimport time\nimport sys\nx=time.time()'))
 .then(() => vm.get('x'))
 .then((x) => {

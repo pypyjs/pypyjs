@@ -765,7 +765,7 @@ pypyjs.prototype.repl = function repl(prmpt) {
     // By default we read from the provided stdin function, but unfortunately
     // it defaults to a closed file.
     var buffer = "";
-    let _prmpt = ps1 => {
+    let _prmpt = (ps1) => {
       var input;
       this.stdout(ps1);
       var c = this.stdin();
@@ -800,7 +800,7 @@ pypyjs.prototype.repl = function repl(prmpt) {
       }
     }
     if (useProcessStdin) {
-      _prmpt = ps1 => {
+      _prmpt = (ps1) => {
         return new Promise((resolve, reject) => {
           this.stdout(ps1);
           const slurp = function slurp() {
