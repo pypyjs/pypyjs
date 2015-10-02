@@ -117,7 +117,7 @@ release-debug: ./build/pypyjs-debug-$(VERSION).tar.gz
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
-# This builds a debugging-friendly version that is bigger but has e.g. 
+# This builds a debugging-friendly version that is bigger but has e.g.
 # more asserts and better traceback information.
 
 ./build/pypyjs-debug.vm.js:

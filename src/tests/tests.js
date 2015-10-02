@@ -110,7 +110,19 @@ var pypyjsTestResult = vm.ready()
     throw new Error('multi-line import didn\'t work');
   }
 })
-
+// add module from js that imports modules
+.then(() => {
+  return
+    vm.addModule([
+      'import time',
+      'import sys',
+      'import os',
+      'assert time.time() > 0'
+    ].join('\n'), 'testmodule').then(() => vm.exec('import testmodule'));
+})
+.then(() => {
+  return vm.addModuleFromFile('tests/test.py', 'testmodule2').then('import testmodule2');
+})
 // Check that you can create additional VMs using `new`
 .then(() => {
   const vm2 = new pypyjs();
