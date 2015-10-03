@@ -14,11 +14,11 @@ if (typeof console !== 'undefined') {
   debug = print;
 }
 
-let _dirname = __dirname;;
+let _dirname;
 
 // Find the directory containing this very file.
 // It can be quite difficult depending on execution environment...
-if (typeof _dirname === 'undefined') {
+if (typeof __dirname === 'undefined') {
   _dirname = './';
 
   // A little hackery to find the URL of this very file.
@@ -31,6 +31,8 @@ if (typeof _dirname === 'undefined') {
       break;
     }
   }
+} else {
+  _dirname = __dirname;
 }
 
 if (_dirname.charAt(_dirname.length - 1) !== '/') {
