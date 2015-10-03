@@ -788,7 +788,7 @@ pypyjs.prototype.repl = function repl(prmpt) {
     };
     // For nodejs, we can do an async prompt atop process.stdin,
     // unless we're using a custom stdin function.
-    useProcessStdin = true;
+    let useProcessStdin = true;
     if (typeof process === "undefined") {
       useProcessStdin = false;
     } else if (typeof process.stdin === "undefined") {
