@@ -37,6 +37,8 @@ if (_dirname.charAt(_dirname.length - 1) !== '/') {
   _dirname += '/';
 }
 
+let Promise, FunctionPromise;
+
 // Ensure we have reference to a 'Promise' constructor.
 if (typeof Promise === 'undefined') {
   if (this && typeof this.Promise !== 'undefined') {
