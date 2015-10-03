@@ -139,8 +139,8 @@ assert time.time() > 0`).then(() => vm.exec('import testmodule'));
         })
         .then(() => vm2.reInit())
         .then(() => vm2.get('x'))
-        .then(() => { 
-          if (typeof y !== 'undefined') {
+        .then((x) => {
+          if (typeof x !== 'undefined') {
             throw new Error('name should have been undefined in new VM');
           }
         });
