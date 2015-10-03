@@ -641,7 +641,7 @@ top_level_scope = {'__name__': '__main__', '__package__': None}
 main = types.ModuleType('__main__')
 main.__dict__.update(top_level_scope)
 sys.modules['__main__'] = main
-top_level_scope = main`,
+top_level_scope = main`;
 
     // make c string
     let code = Module.intArrayFromString(initCode);
