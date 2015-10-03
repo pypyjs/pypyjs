@@ -373,7 +373,7 @@ function pypyjs(opts) {
         pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
         Module._pypy_setup_home(pypy_home, 0);
         Module._free(pypy_home);
-        var initCode = [
+        const initCode = [
           "import js",
           "import traceback",
           "import sys; sys.platform = 'js'",
@@ -1092,7 +1092,7 @@ PUBLIC_NAMES.forEach((name) => {
 // For nodejs, run a repl when invoked directly from the command-line.
 if (typeof require !== 'undefined' && typeof module !== 'undefined') {
   if (require.main === module) {
-    pypyjs.repl().catch(function (err) {
+    pypyjs.repl().catch((err) => {
       console.log(err)
     });
   }
