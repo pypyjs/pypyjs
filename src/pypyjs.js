@@ -636,7 +636,13 @@ pypyjs.prototype.reInit = function reInit() {
   return new Promise((resolve) => {
     // code to exec
     const initCode =
-        'top_level_scope = {\'__name__\': \'__main__\'}';
+      `del(sys.modules['__main__'])
+top_level_scope = {'__name__': '__main__', '__package__': None}
+main = types.ModuleType('__main__')
+main.__dict__.update(top_level_scope)
+sys.modules['__main__'] = main
+top_level_scope = main`,
+
     // make c string
     let code = Module.intArrayFromString(initCode);
     // alloc
@@ -646,10 +652,6 @@ pypyjs.prototype.reInit = function reInit() {
       throw new pypyjs.Error('Failed to allocate memory');
     }
 
-    Module.resolve = () => {
-      resolve();
-    };
-
     // exec
     const res = Module._pypy_execute_source(code);
 
@@ -658,6 +660,8 @@ pypyjs.prototype.reInit = function reInit() {
     }
 
     Module._free(code);
+  
+    resolve();      
   });
 };
 
@@ -1105,7 +1109,7 @@ if (typeof require !== 'undefined' && typeof module !== 'undefined') {
   }
 }
 
-if (global) {
+if (typeof global !== 'undefined') {
   global.pypyjs = pypyjs;
 }
 

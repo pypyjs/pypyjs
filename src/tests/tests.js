@@ -63,7 +63,7 @@ var pypyjsTestResult = vm.ready()
 })
 // - for globals()
 .then(function() {
-  return pypyjs.get("nonExistentName", true)
+  return vm.get("nonExistentName", true)
 })
 .then(function(x) {
   if (typeof x !== "undefined") {
@@ -73,7 +73,7 @@ var pypyjsTestResult = vm.ready()
 
 // Check that get() propagates errors other than involved in getting the variable.
 .then(function() {
-  return pypyjs.get("__name__ + 5");
+  return vm.get("__name__ + 5");
 }).catch(function(exc) {
   if (typeof exc === "undefined") {
     throw new Error("expected to receive an exception");
@@ -112,16 +112,14 @@ var pypyjsTestResult = vm.ready()
 })
 // add module from js that imports modules
 .then(() => {
-  return
-    vm.addModule([
-      'import time',
-      'import sys',
-      'import os',
-      'assert time.time() > 0'
-    ].join('\n'), 'testmodule').then(() => vm.exec('import testmodule'));
+  return vm.addModule('testmodule', `
+import time
+import sys
+import os
+assert time.time() > 0`).then(() => vm.exec('import testmodule'));
 })
 .then(() => {
-  return vm.addModuleFromFile('testmodule2', 'tests/test.py').then('import testmodule2');
+  return vm.addModuleFromFile('testmodule2', 'tests/test.py').then(() => vm.exec('import testmodule2'));
 })
 // Check that you can create additional VMs using `new`
 .then(() => {
