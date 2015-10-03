@@ -6,10 +6,19 @@
     "no-console": 0,
     "comma-dangle": 0,
     "new-cap": 0,
-    "camelcase": 0
+    "camelcase": 0,
+    "no-cond-assign": 0,
+    "no-labels": 0,
+    "id-length": 0,
+    "no-constant-condition": 0
   },
   "globals": {
     "Promise": true,
-    "FunctionPromise": true
+    "FunctionPromise": true,
+    "load": true,
+    "printErr": true,
+    "snarf": true,
+    "read": true,
+    "loadRelativeToScript": true
   }
 }
