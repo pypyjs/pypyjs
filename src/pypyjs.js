@@ -520,8 +520,7 @@ pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
     const _code = `try:
   ${_blockIndent(_preCode, '  ')}
   ${code}
-except Exception as e:
-  print repr(e)
+except Exception:
   typ, val, tb = sys.exc_info()
   err_name = getattr(typ, '__name__', str(typ))
   err_msg = str(val)
@@ -532,7 +531,7 @@ except Exception as e:
   js.globals['pypyjs']._lastErrorMessage = err_msg
   js.globals['pypyjs']._lastErrorTrace = err_trace
 `;
-    console.log('executing: ' + _code);
+
     const code_chars = Module.intArrayFromString(_code);
     code_ptr = Module.allocate(code_chars, 'i8', Module.ALLOC_NORMAL);
     if (!code_ptr) {
