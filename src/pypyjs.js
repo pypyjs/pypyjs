@@ -525,7 +525,8 @@ pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
     const _code = `try:
   ${_blockIndent(_preCode, '  ')}
   ${code}
-except Exception:
+except Exception as e:
+  print repr(e)
   typ, val, tb = sys.exc_info()
   err_name = getattr(typ, '__name__', str(typ))
   err_msg = str(val)
@@ -1101,8 +1102,8 @@ if (typeof require !== 'undefined' && typeof module !== 'undefined') {
   }
 }
 
-if (this) {
-  this.pypyjs = pypyjs;
+if (global) {
+  global.pypyjs = pypyjs;
 }
 
 if (typeof window !== 'undefined') {
