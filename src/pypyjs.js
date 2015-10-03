@@ -521,7 +521,7 @@ pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
   const _preCode = preCode ? preCode : '';
   let code_ptr;
 
-  return new Promise(function promise(resolve) {
+  return new Promise(function promise(resolve, reject) {
     const _code = `try:
   ${_blockIndent(_preCode, '  ')}
   ${code}
@@ -764,11 +764,12 @@ pypyjs.prototype.set = function set(name, value) {
 // in the browser, because it's blocking).
 //
 pypyjs.prototype.repl = function repl(prmpt) {
+  let _prmpt
   if (!prmpt) {
     // By default we read from the provided stdin function, but unfortunately
     // it defaults to a closed file.
     var buffer = "";
-    let _prmpt = (ps1) => {
+    _prmpt = (ps1) => {
       var input;
       this.stdout(ps1);
       var c = this.stdin();
