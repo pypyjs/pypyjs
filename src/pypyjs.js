@@ -1071,9 +1071,9 @@ pypyjs.stdout = stdio.stdout
 pypyjs.stderr = stdio.stderr
 
 pypyjs._defaultVM = null
-pypyjs._defaultStdin = () => pypyjs.stdin(...arguments);
-pypyjs._defaultStdout = () => pypyjs.stdout(...arguments);
-pypyjs._defaultStderr = () => pypyjs.stderr(...arguments);
+pypyjs._defaultStdin = function () { return pypyjs.stdin(...arguments); };
+pypyjs._defaultStdout = function () { return pypyjs.stdout(...arguments); };
+pypyjs._defaultStderr = function () { return pypyjs.stderr(...arguments); };
 
 var PUBLIC_NAMES = ['ready', 'exec', 'eval', 'execfile', 'get', 'set',
                     'repl', 'loadModuleData'];
