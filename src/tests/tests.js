@@ -2,6 +2,7 @@
 // A very minimal testsuite for the PyPy.js shell code.
 // We should do something a lot nicer than this...
 //
+let pypyjs;
 
 if (typeof pypyjs === 'undefined') {
   if (typeof require !== 'undefined') {
@@ -22,9 +23,10 @@ if (typeof console !== 'undefined') {
 
 const vm = new pypyjs();
 
-var pypyjsTestResult = vm.ready()
+const pypyjsTestResult = vm.ready();
 
 // First, check that python-level errors will actually fail the tests.
+pypyjsTestResult
 .then(() => vm.exec('raise ValueError(42)'))
 .then(() => { throw new Error('Python exception did not trigger js Error'); },
 (err) => {
@@ -42,7 +44,7 @@ var pypyjsTestResult = vm.ready()
 .then(() => vm.get('x'))
 .then((x) => {
   if (x !== 14) {
-    throw new Error("set-exec-get cycle failed");
+    throw new Error('set-exec-get cycle failed');
   }
 })
 
@@ -62,23 +64,20 @@ var pypyjsTestResult = vm.ready()
   }
 })
 // - for globals()
-.then(function() {
-  return vm.get("nonExistentName", true)
-})
-.then(function(x) {
-  if (typeof x !== "undefined") {
-    throw new Error("name should have been undefined");
+.then(() => vm.get('nonExistentName', true))
+.then((x) => {
+  if (typeof x !== 'undefined') {
+    throw new Error('name should have been undefined');
   }
 })
 
 // Check that get() propagates errors other than involved in getting the variable.
-.then(function() {
-  return vm.get("__name__ + 5");
-}).catch(function(exc) {
-  if (typeof exc === "undefined") {
-    throw new Error("expected to receive an exception");
-  } else if ("TypeError" !== exc.name) {
-    throw new Error("expected to receive a TypeError");
+.then(() => vm.get('__name__ + 5'))
+.catch((exc) => {
+  if (typeof exc === 'undefined') {
+    throw new Error('expected to receive an exception');
+  } else if (exc.name !== 'TypeError') {
+    throw new Error('expected to receive a TypeError');
   }
 })
 
@@ -98,9 +97,7 @@ var pypyjsTestResult = vm.ready()
 })
 
 // Check that multi-import statements will work correctly.
-.then(function() {
-  return vm.exec("import os\nimport time\nimport sys\nx=time.time()")
-})
+.then(() => vm.exec('import os\nimport time\nimport sys\nx=time.time()'))
 
 // Check that multi-import statements will work correctly.
 .then(() => vm.exec('import os\nimport time\nimport sys\nx=time.time()'))

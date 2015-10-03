@@ -6,13 +6,6 @@
 // as well as in any module exports or 'window' object we can find.
 
 // Generic debugging printf.
-let debug;
-
-if (typeof console !== 'undefined') {
-  debug = console.log.bind(console);
-} else if (typeof print !== 'undefined' && typeof window === 'undefined') {
-  debug = print;
-}
 
 let _dirname;
 
@@ -24,13 +17,12 @@ if (typeof __dirname === 'undefined') {
   // A little hackery to find the URL of this very file.
   // Throw an error, then parse the stack trace looking for filenames.
   const errlines = (new Error()).stack.split('\n');
-  for (let i = 0; i < errlines.length; i++) {
-    const match = /(at Anonymous function \(|at |@)(.+\/)pypyjs.js/.exec(errlines[i]);
+  errlines.forEach((line) => {
+    const match = /(at Anonymous function \(|at |@)(.+\/)pypyjs.js/.exec(line);
     if (match) {
       _dirname = match[2];
-      break;
     }
-  }
+  });
 } else {
   _dirname = __dirname;
 }
@@ -39,7 +31,8 @@ if (_dirname.charAt(_dirname.length - 1) !== '/') {
   _dirname += '/';
 }
 
-let Promise, FunctionPromise;
+let Promise;
+let FunctionPromise;
 
 // Ensure we have reference to a 'Promise' constructor.
 if (typeof Promise === 'undefined') {
@@ -125,11 +118,11 @@ stdio.stdin = devNull.stdin;
 
 if (typeof process !== 'undefined') {
   if (typeof process.stdout !== 'undefined') {
-    stdio.stdout = function stdout(x) { process.stdout.write(x); };
+    stdio.stdout = function stdout(byte) { process.stdout.write(byte); };
   }
 
   if (typeof process.stderr !== 'undefined') {
-    stdio.stderr = function stderr(x) { process.stderr.write(x); };
+    stdio.stderr = function stderr(byte) { process.stderr.write(byte); };
   }
 }
 
@@ -162,9 +155,9 @@ if (stdio.stdout === null && typeof _print !== 'undefined') {
   const buffer = [];
   stdio.stdout = function stdout(data) {
     for (let i = 0; i < data.length; i++) {
-      const x = data.charAt(i);
-      if (x !== '\n') {
-        buffer.push(x);
+      const byte = data.charAt(i);
+      if (byte !== '\n') {
+        buffer.push(byte);
       } else {
         _print(buffer.join(''));
         buffer.splice(undefined, buffer.length);
@@ -179,9 +172,9 @@ if (stdio.stderr === null && typeof _printErr !== 'undefined') {
   const buffer = [];
   stdio.stderr = function stderr(data) {
     for (let i = 0; i < data.length; i++) {
-      const x = data.charAt(i);
-      if (x !== '\n') {
-        buffer.push(x);
+      const byte = data.charAt(i);
+      if (byte !== '\n') {
+        buffer.push(byte);
       } else {
         _printErr(buffer.join(''));
         buffer.splice(undefined, buffer.length);
@@ -288,6 +281,7 @@ function pypyjs(opts) {
     Module.noInitialRun = true;
     Module.noExitRuntime = true;
 
+    let stdoutBuffer = [];
     // Route stdin to an overridable method on the object.
     const stdin = () => {
       if (stdoutBuffer.length) {
@@ -299,11 +293,10 @@ function pypyjs(opts) {
 
     // Route stdout to an overridable method on the object.
     // We buffer the output for efficiency.
-    let stdoutBuffer = [];
-    const stdout = (x) => {
-      const c = String.fromCharCode(x);
-      stdoutBuffer.push(c);
-      if (c === '\n' || stdoutBuffer.length >= 128) {
+    const stdout = (byte) => {
+      const char = String.fromCharCode(byte);
+      stdoutBuffer.push(char);
+      if (char === '\n' || stdoutBuffer.length >= 128) {
         this.stdout(stdoutBuffer.join(''));
         stdoutBuffer = [];
       }
@@ -311,7 +304,7 @@ function pypyjs(opts) {
 
     // Route stderr to an overridable method on the object.
     // We do not buffer stderr.
-    const stderr = (x) => this.stderr(String.fromCharCode(x));
+    const stderr = (byte) => this.stderr(String.fromCharCode(byte));
 
     // This is where execution will continue after loading
     // the memory initialization data, if any.
@@ -588,13 +581,13 @@ pypyjs.prototype.ready = function ready() {
 //
 pypyjs.prototype.exec = function exec(code, options) {
   return this._ready.then(() => {
-    let p = Promise.resolve();
+    let promise = Promise.resolve();
     let preCode;
 
     // Find any "import" statements in the code,
     // and ensure the modules are ready for loading.
     if (this.autoLoadModules) {
-      p = p.then(() => {
+      promise = promise.then(() => {
         return this.findImportedNames(code);
       })
       .then((imports) => {
@@ -623,10 +616,10 @@ pypyjs.prototype.exec = function exec(code, options) {
     const _code = (options && options.file)
       ? `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`
       : `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
-    p = p.then(() => {
+    promise = promise.then(() => {
       return this._execute_source(_code, preCode);
     });
-    return p;
+    return promise;
   });
 };
 
@@ -660,8 +653,8 @@ top_level_scope = main`;
     }
 
     Module._free(code);
-  
-    resolve();      
+
+    resolve();
   });
 };
 
@@ -699,11 +692,11 @@ pypyjs.prototype.eval = function evaluate(expr) {
 // This fetches the named file and passes it to the VM for execution.
 //
 pypyjs.prototype.execfile = function execfile(filename) {
-  const path = this.inJsModules[`modules/${filename}`]
+  const _path = this.inJsModules[`modules/${filename}`]
     ? `modules/${filename}`
     : filename;
 
-  return this.fetch(path).then((xhr) => {
+  return this.fetch(_path).then((xhr) => {
     const code = xhr.responseText;
 
     return this.exec(code, { file: `/lib/pypyjs/lib_pypy/${filename}` });
@@ -723,16 +716,16 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
   let reference;
   // We can read from global scope for internal use; don't do this from calling code!
   if (_fromGlobals) {
-    reference = "globals()['" + _escape(name) + "']";
+    reference = `globals()['${escape(name)}']`;
   } else {
-    reference = "top_level_scope." + _escape(name);
+    reference = `top_level_scope.${_escape(name)}`;
   }
 
   return this._ready.then(() => {
     // NOTE: This code is embedded in another try/except statement by _execute_source() BUT...
     //       the first indentation is added in that function, AND it uses two-space indentation!
     //       When you change this, put a "console.log()" in _execute_source() to make sure it's right
-    var code =
+    const code =
  `try:
     _pypyjs_getting = ${reference}
   except (KeyError, AttributeError):
@@ -755,9 +748,9 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
 pypyjs.prototype.set = function set(name, value) {
   return this._ready.then(() => {
     const Module = this._module;
-    const h = Module._emjs_make_handle(value);
+    const handle = Module._emjs_make_handle(value);
     const _name = _escape(name);
-    const code = `top_level_scope.${_name} = js.Value(${h})`;
+    const code = `top_level_scope.${_name} = js.Value(${handle})`;
     return this._execute_source(code);
   });
 };
@@ -772,35 +765,35 @@ pypyjs.prototype.set = function set(name, value) {
 // in the browser, because it's blocking).
 //
 pypyjs.prototype.repl = function repl(prmpt) {
-  let _prmpt
+  let _prmpt;
   if (!prmpt) {
     // By default we read from the provided stdin function, but unfortunately
     // it defaults to a closed file.
-    var buffer = "";
+    let buffer = '';
     _prmpt = (ps1) => {
-      var input;
+      let input;
       this.stdout(ps1);
-      var c = this.stdin();
-      while (c) {
-        var idx = c.indexOf("\n");
+      let char = this.stdin();
+      while (char) {
+        const idx = char.indexOf('\n');
         if (idx >= 0) {
-          var input = buffer + c.substr(0, idx + 1);
-          buffer = c.substr(idx + 1);
+          input = buffer + char.substr(0, idx + 1);
+          buffer = char.substr(idx + 1);
           return input;
         }
-        buffer += c;
-        c = this.stdin();
+        buffer += char;
+        char = this.stdin();
       }
       input = buffer;
-      buffer = "";
+      buffer = '';
       return input;
     };
     // For nodejs, we can do an async prompt atop process.stdin,
     // unless we're using a custom stdin function.
     let useProcessStdin = true;
-    if (typeof process === "undefined") {
+    if (typeof process === 'undefined') {
       useProcessStdin = false;
-    } else if (typeof process.stdin === "undefined") {
+    } else if (typeof process.stdin === 'undefined') {
       useProcessStdin = false;
     } else {
       if (this.stdin !== devNull.stdin) {
@@ -813,7 +806,7 @@ pypyjs.prototype.repl = function repl(prmpt) {
     }
     if (useProcessStdin) {
       _prmpt = (ps1) => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           this.stdout(ps1);
           const slurp = function slurp() {
             process.stdin.once('readable', () => {
@@ -890,6 +883,9 @@ pypyjs.prototype.findImportedNames = function findImportedNames(code) {
   const imports = [];
   let match;
   importStatementRE.lastIndex = 0;
+
+  const pushImport = (relmod) => (submod) => imports.push(relmod + submod.split(/\s*as\s*/)[0]);
+
   while ((match = importStatementRE.exec(code)) !== null) {
     let relmod = match[2];
     if (relmod) {
@@ -908,11 +904,7 @@ pypyjs.prototype.findImportedNames = function findImportedNames(code) {
     }
 
     submods = submods.split(/\s*,\s*/);
-    for (let i = 0; i < submods.length; i++) {
-      let submod = submods[i];
-      submod = submod.split(/\s*as\s*/)[0];
-      imports.push(relmod + submod);
-    }
+    submods.forEach(pushImport(relmod));
   }
   return Promise.resolve(imports);
 };
@@ -948,7 +940,7 @@ pypyjs.prototype.loadModuleData = function loadModuleData(/* names */) {
 
     return Promise.all(Object.keys(toLoad).map((name) => this._loadModuleData(name)));
   });
-}
+};
 
 pypyjs.prototype._findModuleDeps = function _findModuleDeps(name, seen) {
   const _seen = seen ? seen : {};
@@ -1007,14 +999,14 @@ pypyjs.prototype._loadModuleData = function _loadModuleData(name) {
 
   // We need to fetch the module file and write it out.
   const modfile = this._allModules[name].file;
-  const p = this.fetch('modules/' + modfile)
+  const promise = this.fetch(`modules/${modfile}`)
   .then((xhr) => {
     const contents = xhr.responseText;
     this._writeModuleFile(name, contents);
     delete this._pendingModules[name];
   });
-  this._pendingModules[name] = p;
-  return p;
+  this._pendingModules[name] = promise;
+  return promise;
 };
 
 pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
@@ -1025,8 +1017,8 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   const dir = file.split('/').slice(0, -1).join('/');
   try {
     Module.FS_createPath('/lib/pypyjs/lib_pypy', dir, true, false);
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error(err);
   }
 
   // Now we can safely create the file.
@@ -1039,10 +1031,9 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   this.FS.unlink(fullpath);
   try {
     this.FS.unlink(fullpath);
-  } catch (e) {
-    // ignore error
-    if (!e.errno === 2) {
-      console.log(e);
+  } catch (err) {
+    if (!err.errno === 2) {
+      console.log(err);
     }
   }
   Module.FS_createDataFile(fullpath, '', arr, true, false, true);
@@ -1074,17 +1065,17 @@ pypyjs.Error.prototype.constructor = pypyjs.Error;
 // will invoke corresponding methods on a default VM instance.
 // This makes it look like 'pypyjs' is a singleton VM instance.
 
-pypyjs.stdin = stdio.stdin
-pypyjs.stdout = stdio.stdout
-pypyjs.stderr = stdio.stderr
+pypyjs.stdin = stdio.stdin;
+pypyjs.stdout = stdio.stdout;
+pypyjs.stderr = stdio.stderr;
 
-pypyjs._defaultVM = null
-pypyjs._defaultStdin = function () { return pypyjs.stdin(...arguments); };
-pypyjs._defaultStdout = function () { return pypyjs.stdout(...arguments); };
-pypyjs._defaultStderr = function () { return pypyjs.stderr(...arguments); };
+pypyjs._defaultVM = null;
+pypyjs._defaultStdin = function defaultStdin() { return pypyjs.stdin(...arguments); };
+pypyjs._defaultStdout = function defaultStdout() { return pypyjs.stdout(...arguments); };
+pypyjs._defaultStderr = function defaultStderr() { return pypyjs.stderr(...arguments); };
 
-var PUBLIC_NAMES = ['ready', 'exec', 'eval', 'execfile', 'get', 'set',
-                    'repl', 'loadModuleData'];
+const PUBLIC_NAMES = ['ready', 'exec', 'eval', 'execfile', 'get', 'set',
+                      'repl', 'loadModuleData'];
 
 PUBLIC_NAMES.forEach((name) => {
   pypyjs[name] = () => {
@@ -1104,7 +1095,7 @@ PUBLIC_NAMES.forEach((name) => {
 if (typeof require !== 'undefined' && typeof module !== 'undefined') {
   if (require.main === module) {
     pypyjs.repl().catch((err) => {
-      console.log(err)
+      console.log(err);
     });
   }
 }
