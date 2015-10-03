@@ -618,7 +618,7 @@ pypyjs.prototype.exec = function exec(code, options) {
     }
 
     // Now we can execute the code in custom top-level scope.
-    const code_ = (options && options.file)
+    const _code = (options && options.file)
       ? `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`
       : `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
     p = p.then(() => {
@@ -714,24 +714,25 @@ pypyjs._resultsID = 0;
 pypyjs._resultsMap = {};
 pypyjs.prototype.get = function get(name, _fromGlobals) {
   const resid = `${(pypyjs._resultsID++)}`;
-  let namespace;
+  let reference;
   // We can read from global scope for internal use; don't do this from calling code!
   if (_fromGlobals) {
-    var reference = "globals()['" + _escape(name) + "']";
+    reference = "globals()['" + _escape(name) + "']";
   } else {
-    var reference = "top_level_scope." + _escape(name);
+    reference = "top_level_scope." + _escape(name);
   }
 
   return this._ready.then(() => {
     // NOTE: This code is embedded in another try/except statement by _execute_source() BUT...
     //       the first indentation is added in that function, AND it uses two-space indentation!
     //       When you change this, put a "console.log()" in _execute_source() to make sure it's right
-    var code =   "try:\n" +
-               "    _pypyjs_getting = " + reference + "\n" +
-               "  except (KeyError, AttributeError):\n" +
-               "    _pypyjs_getting = js.undefined\n" +
-               "  js.globals['pypyjs']._resultsMap['" + resid + "'] = js.convert(_pypyjs_getting)\n" +
-               "  del _pypyjs_getting";
+    var code =
+ `try:
+    _pypyjs_getting = ${reference}
+  except (KeyError, AttributeError):
+    _pypyjs_getting = js.undefined
+  js.globals['pypyjs']._resultsMap['${resid}'] = js.convert(_pypyjs_getting)
+  del _pypyjs_getting`;
     return this._execute_source(code);
   }).then(() => {
     const res = pypyjs._resultsMap[resid];

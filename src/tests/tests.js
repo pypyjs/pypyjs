@@ -121,7 +121,7 @@ var pypyjsTestResult = vm.ready()
     ].join('\n'), 'testmodule').then(() => vm.exec('import testmodule'));
 })
 .then(() => {
-  return vm.addModuleFromFile('tests/test.py', 'testmodule2').then('import testmodule2');
+  return vm.addModuleFromFile('testmodule2', 'tests/test.py').then('import testmodule2');
 })
 // Check that you can create additional VMs using `new`
 .then(() => {
