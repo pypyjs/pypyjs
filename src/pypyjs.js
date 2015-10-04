@@ -475,10 +475,14 @@ pypyjs.prototype.fetch = function fetch(relpath, responseType) {
   });
 };
 
+// add a Module to the vm from a file so you can import it later. Uses a path
+// relative to pypyjs.
 pypyjs.prototype.addModuleFromFile = function addModuleFromFile(name, file) {
   return this.fetch(file).then((data) => this.addModule(name, data.responseText));
 };
 
+// add a Module to the vm from javascript. It will automatically write it it to
+// the "disk" and lets you import it in your code later.
 pypyjs.prototype.addModule = function addModule(name, source) {
   return this.findImportedNames(source).then((imports) => {
     // keep track of any modules that have been previously loaded
@@ -607,7 +611,11 @@ pypyjs.prototype.exec = function exec(code, options) {
         Object.keys(this._modulesToReset)
           .map(mod => `if '${mod}' in sys.modules: del(sys.modules['${mod}'])`);
 
-      preCode = `try:\n  import sys\n  ${modulesToLoad.join('\n  ')}\nexcept:\n  raise SystemError('Failed to reload custom modules')`;
+      preCode = `try:
+  import sys
+  ${modulesToLoad.join('\n  ')}
+except:
+  raise SystemError('Failed to reload custom modules')`;
       this._modulesToReset = {};
     }
 
