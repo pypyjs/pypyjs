@@ -3,7 +3,13 @@
   "version": "0.4.1",
   "author": "Ryan Kelly <ryan@rfk.id.au>",
   "description": "The PyPy Python VM, in JavaScript",
-  "keywords": ["python", "pypy", "asmjs", "emscripten", "wtf"],
+  "keywords": [
+    "python",
+    "pypy",
+    "asmjs",
+    "emscripten",
+    "wtf"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/pypyjs/pypyjs"
@@ -16,8 +22,7 @@
     "tools/",
     "README.rst"
   ],
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "babel-eslint": "^4.1.0",
     "eslint": "^1.3.1",
@@ -27,9 +32,7 @@
     "gulp-babel": "^5.2.1",
     "gulp-eslint": "^1.0.0",
     "gulp-filter": "^3.0.1",
-    "gulp-jscs": "^2.0.0",
     "gulp-sourcemaps": "^1.5.2",
-    "gulp-wrap-js": "^0.4.1",
     "gulp-wrapper": "^1.0.0"
   },
   "license": "MIT"
