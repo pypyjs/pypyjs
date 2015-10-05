@@ -609,11 +609,13 @@ pypyjs.prototype.exec = function exec(code, options) {
         Object.keys(this._modulesToReset)
           .map(mod => `if '${mod}' in sys.modules: del(sys.modules['${mod}'])`);
 
-      preCode = `try:
+      preCode = `
+try:
   import sys
   ${modulesToLoad.join('\n  ')}
 except:
   raise SystemError('Failed to reload custom modules')`;
+
       this._modulesToReset = {};
     }
 
@@ -738,11 +740,8 @@ pypyjs.prototype.get = function get(name, _fromGlobals) {
   }
 
   return this._ready.then(() => {
-    // NOTE: This code is embedded in another try/except statement by _execute_source() BUT...
-    //       the first indentation is added in that function, AND it uses two-space indentation!
-    //       When you change this, put a "console.log()" in _execute_source() to make sure it's right
-    const code =
- `try:
+    const code = `
+  try:
     _pypyjs_getting = ${reference}
   except (KeyError, AttributeError):
     _pypyjs_getting = js.undefined
