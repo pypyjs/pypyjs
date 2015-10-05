@@ -515,15 +515,13 @@ function _escape(value) {
 // Calling code should not use it directly; rather we use it
 // as a primitive to build up a nicer execution API.
 //
-pypyjs.prototype._execute_source = function _execute_source(code, preCode) {
+pypyjs.prototype._execute_source = function _execute_source(code) {
   const Module = this._module;
-  const _preCode = preCode ? preCode : '';
   let code_ptr;
 
   return new Promise(function promise(resolve, reject) {
     const _code = `try:
-  ${_blockIndent(_preCode, '  ')}
-  ${code}
+  ${code.trim()}
 except Exception:
   typ, val, tb = sys.exc_info()
   err_name = getattr(typ, '__name__', str(typ))
