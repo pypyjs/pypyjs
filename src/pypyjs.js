@@ -1048,8 +1048,8 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   try {
     this.FS.unlink(fullpath);
   } catch (err) {
-    if (!err.errno === 2) {
-      console.log(err);
+    if (err.errno !== 2) {
+      console.error(err);
     }
   }
   Module.FS_createDataFile(fullpath, '', arr, true, false, true);
