@@ -116,7 +116,7 @@ import os
 assert time.time() > 0`).then(() => vm.exec('import testmodule'));
 })
 .then(() => {
-  return vm.addModuleFromFile('testmodule2', 'tests/test.py').then(() => vm.exec('import testmodule2'));
+  return vm.addModuleFromFile('testmodule2', 'tests/test_module.py').then(() => vm.exec('import testmodule2'));
 })
 // Check that you can create additional VMs using `new`
 .then(() => {

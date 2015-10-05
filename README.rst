@@ -50,7 +50,7 @@ Repository Overview
 Transpiling es6
 ~~~~~~~~~~~~~~~
 
-Pypyjs is written using es6 and is transpiled to es5 using `babeljs`_ to run the
+PyPy.js is written using es6 and is transpiled to es5 using `babeljs`_. To run the
 code though the transpiler you need `gulp`_ and you'll need a few other
 node_modules, and nodejs ofcourse (I'm assuming you have those installed, npm
 comes with node).

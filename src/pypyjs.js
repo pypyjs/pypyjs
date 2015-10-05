@@ -481,8 +481,8 @@ pypyjs.prototype.addModuleFromFile = function addModuleFromFile(name, file) {
   return this.fetch(file).then((data) => this.addModule(name, data.responseText));
 };
 
-// add a Module to the vm from javascript. It will automatically write it it to
-// the "disk" and lets you import it in your code later.
+// add a Module to the vm from javascript. It will automatically write it to
+// the "disk" when you import it in your code later.
 pypyjs.prototype.addModule = function addModule(name, source) {
   return this.findImportedNames(source).then((imports) => {
     // keep track of any modules that have been previously loaded
