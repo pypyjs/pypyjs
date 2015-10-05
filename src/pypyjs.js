@@ -617,13 +617,24 @@ except:
       this._modulesToReset = {};
     }
 
-    // Now we can execute the code in custom top-level scope.
-    const _code = (options && options.file)
-      ? `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`
-      : `exec(''' ${_escape(code)} ''' in top_level_scope.__dict__)`;
-    promise = promise.then(() => {
-      return this._execute_source(_code, preCode);
-    });
+    let _code;
+
+    if (options && options.file) {
+      try {
+        this.Module.FS.unlink(options.file);
+      } catch (e) {
+        if (e.errno !== 2) {
+          console.error(e);
+        }
+      }
+      this.Module.FS_createDataFile(options.file, '', code, true, false, true);
+      // Now we can execute the code in custom top-level scope.
+      _code = `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`;
+    } else {
+      _code = `exec('''${_escape(code)}''' in top_level_scope.__dict__)`;
+    }
+
+    promise = promise.then(() => this._execute_source(_blockIndent(preCode)).then(() => this._execute_source(_code)));
     return promise;
   });
 };
