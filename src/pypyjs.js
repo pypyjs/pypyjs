@@ -495,7 +495,7 @@ pypyjs.prototype.addModule = function addModule(name, source) {
       imports
     };
     if (!this.inJsModules) {
-      this.inJsModules = [];
+      this.inJsModules = {};
     }
     this.inJsModules[`modules/${name}.py`] = source;
   });
