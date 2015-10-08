@@ -249,7 +249,7 @@ function pypyjs(opts) {
         // Call dependenciesFulfilled if it won't be done automatically.
         'dependenciesFulfilled=function() { inDependenciesFulfilled(FS); };',
         'if(!memoryInitializer||(!ENVIRONMENT_IS_WEB&&!ENVIRONMENT_IS_WORKER))dependenciesFulfilled();',
-      ].join('');
+      ].join('\r\n');
       return new FunctionPromise('Module', 'inDependenciesFulfilled', 'require',
                              'module', '__filename', '_dirname', funcBody);
     });
@@ -264,9 +264,7 @@ function pypyjs(opts) {
     const Module = {};
     this._module = Module;
     Module.TOTAL_MEMORY = this.totalMemory;
-    Module.resolve = () => {
-      console.log('resolved without subscription');
-    };
+
     // We will set up the filesystem manually when we're ready.
     Module.noFSInit = true;
     Module.thisProgram = '/lib/pypyjs/pypyjs.js';
@@ -370,42 +368,40 @@ function pypyjs(opts) {
         pypy_home = Module.allocate(pypy_home, 'i8', Module.ALLOC_NORMAL);
         Module._pypy_setup_home(pypy_home, 0);
         Module._free(pypy_home);
-        const initCode = [
-          "import js",
-          "import traceback",
-          "import sys; sys.platform = 'js'",
-          // For python3, pypy does some lazy-initialization stuff
-          // with stdio streams that isn't triggered when you use
-          // it as a library instead of an exe.  Fix it up.
-          "def create_stdio(fd, mode, name, errors=None):\n" +
-          "  import io\n" +
-          "  return io.open(fd, mode, buffering=1, errors=errors, closefd=False)\n" +
-          "if not hasattr(sys, 'stdin'):\n" +
-          "  sys.stdin = sys.__stdin__ = create_stdio(0, 'r', '<stdin>')\n" +
-          "  sys.stdout = sys.__stdout__ = create_stdio(1, 'w', '<stdout>')\n" +
-          "  sys.stderr = sys.__stderr = create_stdio(2, 'w', '<stderr>', 'backslashreplace')",
-          // Create a "__main__" module in which we'll execute code.
-          "import types",
-          "top_level_scope = {'__name__': '__main__', '__package__': None}",
-          "main = types.ModuleType('__main__')",
-          "main.__dict__.update(top_level_scope)",
-          "sys.modules['__main__'] = main",
-          "top_level_scope = main",
-        ];
-        initCode.forEach((codeStr) => {
-          let code = Module.intArrayFromString(codeStr);
-          code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
-          if (!code) {
-            throw new pypyjs.Error('Failed to allocate memory');
-          }
+        const initCode = `
+import js
+import traceback
+import sys; sys.platform = 'js'
+# For python3, pypy does some lazy-initialization stuff
+# with stdio streams that isn't triggered when you use
+# it as a library instead of an exe.  Fix it up.
+def create_stdio(fd, mode, name, errors=None):
+  import io
+  return io.open(fd, mode, buffering=1, errors=errors, closefd=False)
+if not hasattr(sys, 'stdin'):
+  sys.stdin = sys.__stdin__ = create_stdio(0, 'r', '<stdin>')
+  sys.stdout = sys.__stdout__ = create_stdio(1, 'w', '<stdout>')
+  sys.stderr = sys.__stderr = create_stdio(2, 'w', '<stderr>', 'backslashreplace')
+# Create a "__main__" module in which we'll execute code.
+import types
+top_level_scope = {'__name__': '__main__', '__package__': None}
+main = types.ModuleType('__main__')
+main.__dict__.update(top_level_scope)
+sys.modules['__main__'] = main
+top_level_scope = main"`;
 
-          const res = Module._pypy_execute_source(code);
-          if (res < 0) {
-            throw new pypyjs.Error('Failed to execute python code');
-          }
+        let code = Module.intArrayFromString(initCode);
+        code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
+        if (!code) {
+          throw new pypyjs.Error('Failed to allocate memory');
+        }
 
-          Module._free(code);
-        });
+        const res = Module._pypy_execute_source(code);
+        if (res < 0) {
+          throw new pypyjs.Error('Failed to execute python code');
+        }
+
+        Module._free(code);
       });
     })
     .then(resolve, reject);
@@ -636,8 +632,10 @@ except:
       _code = `exec('''${_escape(code)}''' in top_level_scope.__dict__)`;
     }
 
-    promise = promise.then(() => this._execute_source(_blockIndent(preCode)).then(() => this._execute_source(_code)));
-    return promise;
+    if (preCode) {
+      promise = promise.then(() => this._execute_source(_blockIndent(preCode)));
+    }
+    return promise.then(() => this._execute_source(_code));
   });
 };
 
