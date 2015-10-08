@@ -19,6 +19,7 @@
     "printErr": true,
     "snarf": true,
     "read": true,
-    "loadRelativeToScript": true
+    "loadRelativeToScript": true,
+    "pypyjs": true
   }
 }

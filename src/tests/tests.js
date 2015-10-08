@@ -2,8 +2,6 @@
 // A very minimal testsuite for the PyPy.js shell code.
 // We should do something a lot nicer than this...
 //
-let pypyjs;
-
 if (typeof pypyjs === 'undefined') {
   if (typeof require !== 'undefined') {
     pypyjs = require('../pypyjs.js');
@@ -107,17 +105,6 @@ pypyjsTestResult
     throw new Error('multi-line import didn\'t work');
   }
 })
-// add module from js that imports modules
-.then(() => {
-  return vm.addModule('testmodule', `
-import time
-import sys
-import os
-assert time.time() > 0`).then(() => vm.exec('import testmodule'));
-})
-.then(() => {
-  return vm.addModuleFromFile('testmodule2', 'tests/test_module.py').then(() => vm.exec('import testmodule2'));
-})
 // Check that you can create additional VMs using `new`
 .then(() => {
   const vm2 = new pypyjs();
@@ -131,13 +118,6 @@ assert time.time() > 0`).then(() => vm.exec('import testmodule'));
         .then(() => vm2.get('y'))
         .then((y) => {
           if (typeof y !== 'undefined') {
-            throw new Error('name should have been undefined in new VM');
-          }
-        })
-        .then(() => vm2.reInit())
-        .then(() => vm2.get('x'))
-        .then((x) => {
-          if (typeof x !== 'undefined') {
             throw new Error('name should have been undefined in new VM');
           }
         });

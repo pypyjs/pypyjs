@@ -408,19 +408,11 @@ top_level_scope = main"`;
   });
 }
 
-pypyjs.prototype.inJsModules = null;
-
 // A simple file-fetching wrapper around XMLHttpRequest,
 // that treats paths as relative to the pypyjs.js root url.
 //
 pypyjs.prototype.fetch = function fetch(relpath, responseType) {
   const rootURL = this.rootURL || pypyjs.rootURL;
-
-  if (this.inJsModules && this.inJsModules[relpath]) {
-    return new Promise((resolve) => {
-      resolve({ responseText: this.inJsModules[relpath] });
-    });
-  }
 
   // For the web, use XMLHttpRequest.
   if (typeof XMLHttpRequest !== 'undefined') {
@@ -468,32 +460,6 @@ pypyjs.prototype.fetch = function fetch(relpath, responseType) {
 
   return new Promise((resolve, reject) => {
     reject('unable to fetch files');
-  });
-};
-
-// add a Module to the vm from a file so you can import it later. Uses a path
-// relative to pypyjs.
-pypyjs.prototype.addModuleFromFile = function addModuleFromFile(name, file) {
-  return this.fetch(file).then((data) => this.addModule(name, data.responseText));
-};
-
-// add a Module to the vm from javascript. It will automatically write it to
-// the "disk" when you import it in your code later.
-pypyjs.prototype.addModule = function addModule(name, source) {
-  return this.findImportedNames(source).then((imports) => {
-    // keep track of any modules that have been previously loaded
-    if (this._loadedModules[name]) {
-      this._modulesToReset[name] = true;
-      this._loadedModules[name] = null;
-    }
-    this._allModules[name] = {
-      file: `${name}.py`,
-      imports
-    };
-    if (!this.inJsModules) {
-      this.inJsModules = {};
-    }
-    this.inJsModules[`modules/${name}.py`] = source;
   });
 };
 
@@ -592,29 +558,6 @@ pypyjs.prototype.exec = function exec(code, options) {
       });
     }
 
-    // if any modules have been re-added then we need to remove them from
-    // sys.modules which clears them from memory and allows them to be reloaded
-    // from the emscripten file system
-    if (Object.keys(this._modulesToReset).length) {
-      // construct python code to remove module from sys.modules:
-      // ```python
-      //   import sys
-      //   if 'foo' in sys.modules: del(sys.modules['foo'])
-      // ```
-      const modulesToLoad =
-        Object.keys(this._modulesToReset)
-          .map(mod => `if '${mod}' in sys.modules: del(sys.modules['${mod}'])`);
-
-      preCode = `
-try:
-  import sys
-  ${modulesToLoad.join('\n  ')}
-except:
-  raise SystemError('Failed to reload custom modules')`;
-
-      this._modulesToReset = {};
-    }
-
     let _code;
 
     if (options && options.file) {
@@ -636,41 +579,6 @@ except:
       promise = promise.then(() => this._execute_source(_blockIndent(preCode)));
     }
     return promise.then(() => this._execute_source(_code));
-  });
-};
-
-// Method to reinitialize the global scope without reloading the vm.
-pypyjs.prototype.reInit = function reInit() {
-  const Module = this._module;
-  return new Promise((resolve) => {
-    // code to exec
-    const initCode =
-      `del(sys.modules['__main__'])
-top_level_scope = {'__name__': '__main__', '__package__': None}
-main = types.ModuleType('__main__')
-main.__dict__.update(top_level_scope)
-sys.modules['__main__'] = main
-top_level_scope = main`;
-
-    // make c string
-    let code = Module.intArrayFromString(initCode);
-    // alloc
-    code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
-
-    if (!code) {
-      throw new pypyjs.Error('Failed to allocate memory');
-    }
-
-    // exec
-    const res = Module._pypy_execute_source(code);
-
-    if (res < 0) {
-      throw new pypyjs.Error('Failed to execute python code');
-    }
-
-    Module._free(code);
-
-    resolve();
   });
 };
 
@@ -708,13 +616,8 @@ pypyjs.prototype.eval = function evaluate(expr) {
 // This fetches the named file and passes it to the VM for execution.
 //
 pypyjs.prototype.execfile = function execfile(filename) {
-  const _path = this.inJsModules[`modules/${filename}`]
-    ? `modules/${filename}`
-    : filename;
-
-  return this.fetch(_path).then((xhr) => {
+  return this.fetch(filename).then((xhr) => {
     const code = xhr.responseText;
-
     return this.exec(code, { file: `/lib/pypyjs/lib_pypy/${filename}` });
   });
 };
