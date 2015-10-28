@@ -155,8 +155,8 @@ release3-debug: ./build/pypyjs3-debug-$(VERSION).tar.gz
 	# We just have to make sure it's an order-only prereq of the
 	# *.vm.js targets, otherwise those will also be rebuilt every time.
 	mkdir -p ./build/pypy3-builder
-	rsync -avzd --exclude=/rpython ./deps/pypy3/ ./build/pypy3-builder/
-	rsync -avzd ./deps/pypy/rpython/ ./build/pypy3-builder/rpython/
+	rsync -ad --exclude=/rpython ./deps/pypy3/ ./build/pypy3-builder/
+	rsync -ad ./deps/pypy/rpython/ ./build/pypy3-builder/rpython/
 
 ./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
 ./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
