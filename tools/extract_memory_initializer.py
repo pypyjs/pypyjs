@@ -94,6 +94,8 @@ try:
     # It goes right before the final call to run().
 
     FINAL_POSTAMBLE = "run()"
+    if data.endswith(";"):
+        FINAL_POSTAMBLE = "\n" + FINAL_POSTAMBLE + ";"
     assert data.endswith("}" + FINAL_POSTAMBLE)
 
     if match is None:

@@ -28,18 +28,26 @@ import argparse
 import shutil
 
 
-def _u(path):
-    """Convert filesystem path to unicode."""
-    if not isinstance(path, unicode):
-        path = path.decode(sys.getfilesystemencoding())
-    return path
-
-
-# The root of our pypy source checkout, if it exists.
-PYPY_ROOT = os.path.join(
-    os.path.dirname(_u(__file__)),
-    "../deps/pypy",
-)
+if sys.version_info < (3,):
+    def _u(path):
+        """Convert filesystem path to unicode."""
+        if not isinstance(path, unicode):
+            path = path.decode(sys.getfilesystemencoding())
+        return path
+    MODULE_ROOTS =  ("lib-python/2.7", "lib_pypy")
+    PYPY_ROOT = os.path.join(
+        os.path.dirname(_u(__file__)),
+        "../deps/pypy",
+    )
+else:
+    def _u(path):
+        """Convert filesystem path to unicode."""
+        return path
+    MODULE_ROOTS =  ("lib-python/3", "lib_pypy")
+    PYPY_ROOT = os.path.join(
+        os.path.dirname(_u(__file__)),
+        "../deps/pypy3",
+    )
 
 # Modules that are builtin, so we shouldn't expect them in the bundle.
 BUILTIN_MODULES = [
@@ -162,7 +170,7 @@ PRELOAD_MODULES = [
     "encodings.hex_codec",
     "encodings.base64_codec",
     "encodings.latin_1",
-    "encodings.string_escape",
+    #"encodings.string_escape",
     "encodings.utf_8",
     "encodings.utf_16",
     "encodings.unicode_internal",
@@ -237,7 +245,7 @@ def cmd_init(bundler, opts):
         pypy_root = _u(opts.pypy_root)
     else:
         pypy_root = _u(PYPY_ROOT)
-    for modroot in ("lib-python/2.7", "lib_pypy"):
+    for modroot in MODULE_ROOTS:
         rootdir = os.path.join(pypy_root, modroot)
         bundler.bundle_directory(rootdir)
     # Preload the default set of preloaded modules.
@@ -388,11 +396,11 @@ class ModuleBundle(object):
 
     def load_index(self):
         """Load in-memory state from the index file."""
-        with open(self.index_file) as f:
+        with open(self.index_file, "r") as f:
             index = json.load(f)
         self.modules = index["modules"]
         self.preload = index["preload"]
-        with open(self.meta_file) as f:
+        with open(self.meta_file, "r") as f:
             meta = json.load(f)
         self.exclude = meta["exclude"]
         self.missing = meta["missing"]
@@ -526,17 +534,18 @@ class ModuleBundle(object):
         with open(srcpath, "rb") as f_src:
             data = f_src.read()
         # Look for the encoding marker in the first two lines of the file.
-        lines = data.split("\n", 2)
+        lines = data.split(b"\n", 2)
         encoding = None
-        for i in xrange(2):
+        for i in range(2):
             if i >= len(lines):
                 break
-            if lines[i].startswith("#"):
-                match = re.search(r"coding[:=]\s*([-\w.]+)", lines[i])
+            if lines[i].startswith(b"#"):
+                match = re.search(rb"coding[:=]\s*([-\w.]+)", lines[i])
                 if match is not None:
                     encoding = match.group(1)
+                    encodingName = encoding.decode("ascii")
                     try:
-                        codecs.lookup(encoding)
+                        codecs.lookup(encodingName)
                     except LookupError:
                         encoding = None
                     break
@@ -545,15 +554,15 @@ class ModuleBundle(object):
             if encoding is None:
                 f_dst.write(data)
             else:
-                for j in xrange(i):
+                for j in range(i):
                     f_dst.write(lines[j])
-                    f_dst.write("\n")
-                f_dst.write(lines[i].replace(encoding, "utf-8"))
-                f_dst.write("\n")
-                for j in xrange(i + 1, len(lines)):
-                    f_dst.write(lines[j].decode(encoding).encode("utf8"))
+                    f_dst.write(b"\n")
+                f_dst.write(lines[i].replace(encoding, b"utf-8"))
+                f_dst.write(b"\n")
+                for j in range(i + 1, len(lines)):
+                    f_dst.write(lines[j].decode(encodingName).encode("utf8"))
                     if j < len(lines) - 1:
-                        f_dst.write("\n")
+                        f_dst.write(b"\n")
 
     def _perform_pending_import_analysis(self):
         """Perform import analysis on any pending modules.
@@ -567,7 +576,7 @@ class ModuleBundle(object):
             modname = self._modules_pending_import_analysis.pop()
             # Check if this new module resolves previously-missing imports.
             # XXX TODO: this is pretty ugly and inefficient...
-            for depname in self.missing.keys():
+            for depname in list(self.missing):
                 if self.is_dotted_prefix(modname, depname):
                     revdeps = self.missing.pop(depname)
                     for revdepname in revdeps:
@@ -605,8 +614,8 @@ class ModuleBundle(object):
             moddata = self.modules[depname]
             if "file" in moddata:
                 filepath = os.path.join(self.bundle_dir, moddata["file"])
-                with open(filepath, "r") as f:
-                    self.preload[depname] = f.read()
+                with open(filepath, "rb") as f:
+                    self.preload[depname] = f.read().decode("utf8")
 
     def _find_transitive_dependencies(self, name, seen=None):
         """Transitively find all dependencies of a module."""
@@ -645,7 +654,7 @@ class ImportFinder(ast.NodeVisitor):
         self.uses_absolute_import = False
 
     def find_imported_modules(self):
-        with open(self.filepath, "r") as f:
+        with open(self.filepath, "rb") as f:
             code = f.read()
         try:
             n = ast.parse(code)

@@ -33,7 +33,7 @@ We have the following major components in the PyPy repo:
     `./deps/pypy/rpython/translator/platform/emscripten_platform/`.
   * An rpython JIT backend that emits asmjs at runtime:
     `./deps/pypy/rpython/jit/backend/asmjs/`.
-  * A "js" builtin module for the resulting interperter, to allow interaction
+  * A "js" builtin module for the resulting interpreter, to allow interaction
     with the host javascript environment:
     `./deps/pypy/pypy/module/js/`.
 
@@ -87,6 +87,17 @@ in the submodule like so::
     $> cd ../../
     $> make
 
+For an experimental python3 build, do::
+
+    $> make release3
+
+Similar to the default release, the corresponding pypy repository is here::
+
+    $> cd ./deps/pypy3
+    $> git checkout whatever-branch
+    $> cd ../../
+    $> make
+
 
 Contributing
 ------------
@@ -104,3 +115,32 @@ Before opening a pull-request, please ensure that:
 
 We'll try to get back to you within a few days at most.  Don't hesitate to
 comment in the request if it looks like you've been forgotten.
+
+
+Github, Bitbucket, Branches, Merges, etc
+----------------------------------------
+
+This project is maintained in a github clone of the PyPy project's mercurial
+repository, largely because the original author likes working in git.  This
+can make the status of various branches a little confusing, so here's a quick
+summary:
+
+  * `master` in github tracks upstream head on https://bitbhucket.org/pypy/pypy
+  * `branches/FOO` in github tracks upstream mercurial branch "FOO"
+  * `pypyjs` tracks the latest upstream release branch, with additional
+    commits to add PyPy.js-specific functionality
+  * `pypyjs3` tracks the latest upstream py3k branch, with additional
+    commits to add PyPy.js-specific functionality
+
+Like upstream PyPy, this means that the default build is a python2 interpreter,
+but you can easily build a python3 interpreter by selecting the appropriate
+branch.
+
+The `pypyjs3` branch is a little special, as it contains modifications to the
+pypy interpreter (under the "./pypy" directory) but *not* changes to the
+compilation toolchain (under the "./rpython" directory).  This is done to
+prevent having to maintain those chances in two places.  We build the python3
+release by running the compilation toolchain from the `pypyjs` branch on
+the interpreter code from the `pypyjs3` branch.  See the Makefile for the
+gory details.
+

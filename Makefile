@@ -30,7 +30,7 @@
 
 DOCKER_IMAGE = rfkelly/pypyjs-build
 
-DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" -e "EMCFLAGS=$$EMCFLAGS" -e "EMLDFLAGS=$$EMLDFLAGS" -e "IN_DOCKER=1"
+DOCKER_ARGS = -ti --rm -v /tmp:/tmp -v $(CURDIR):$(CURDIR) -w $(CURDIR) -e "CFLAGS=$$CFLAGS" -e "LDFLAGS=$$LDFLAGS" -e "EMCFLAGS=$$EMCFLAGS" -e "EMLDFLAGS=$$EMLDFLAGS" -e "IN_DOCKER=1" -e "PYTHONPATH=$$PYTHONPATH"
 
 ifeq ($(shell uname -s),Linux)
     # For linux, we can mount /etc/passwd and actually run as the current
@@ -133,6 +133,70 @@ release-debug: ./build/pypyjs-debug-$(VERSION).tar.gz
 	$(PYPY) ./deps/pypy/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs-nojit.vm.js ./deps/pypy/pypy/goal/targetpypystandalone.py
 
 
+# Experimental targets for building python3 interpreter.
+#
+# To avoid the overhead of porting our rpython toolchain modifications
+# across branches, we build a python3 interpreter by using the toolchain
+# from our default branch and feeding it the interpreter from the py3k
+# branch.  Not pretty, but it works andit *saves* us work.
+
+.PHONY: release3
+release3: ./build/pypyjs3-$(VERSION).tar.gz
+
+.PHONY: release3-nojit
+release3-nojit: ./build/pypyjs3-nojit-$(VERSION).tar.gz
+
+.PHONY: release3-debug
+release3-debug: ./build/pypyjs3-debug-$(VERSION).tar.gz
+
+./build/pypy3-builder/NONEXISTENT:
+	# This gets rsynced every time we try to build something
+	# python3-related, but rsync is pretty fast so no big deal.
+	# We just have to make sure it's an order-only prereq of the
+	# *.vm.js targets, otherwise those will also be rebuilt every time.
+	mkdir -p ./build/pypy3-builder
+	rsync -avzd --exclude=/rpython ./deps/pypy3/ ./build/pypy3-builder/
+	rsync -avzd ./deps/pypy/rpython/ ./build/pypy3-builder/rpython/
+
+./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
+./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
+./build/%-$(VERSION).tar.gz: ./build/%.vm.js
+	mkdir -p $(RELDIR)/lib
+	# Copy the compiled VM and massage it into the expected shape.
+	cp ./build/$*.vm.js $(RELDIR)/lib/pypyjs.vm.js
+	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
+	python ./tools/compress_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
+	# Cromulate for better compressibility, unless it's a debug build.
+	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypyjs.vm.js ; fi
+	# Copy the supporting JS library code.
+	cp ./lib/pypyjs.js ./lib/README.txt ./lib/*Promise*.js $(RELDIR)/lib/
+	cp -r ./lib/tests $(RELDIR)/lib/tests
+	# Create an indexed stdlib distribution.
+	# Note that we must run this with python,
+	# to signal that we want the python3 libs.
+	python3 tools/module_bundler.py init $(RELDIR)/lib/modules/
+	# Copy tools for managing the distribution.
+	mkdir -p $(RELDIR)/tools
+	cp ./tools/module_bundler.py $(RELDIR)/tools/
+	# Copy release distribution metadata.
+	cp ./package.json $(RELDIR)/package.json
+	cp ./README.dist.rst $(RELDIR)/README.rst
+	# Tar it up, and we're done.
+	cd ./build && tar -czf $(RELNAME).tar.gz $(RELNAME)
+	rm -rf $(RELDIR)
+
+./build/pypyjs3.vm.js: | ./build/pypy3-builder/NONEXISTENT
+	mkdir -p build
+	$(PYPY) ./build/pypy3-builder/rpython/bin/rpython --backend=js --opt=jit --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs3.vm.js ./build/pypy3-builder/pypy/goal/targetpypystandalone.py
+
+./build/pypyjs3-debug.vm.js: | ./build/pypy3-builder/NONEXISTENT
+	mkdir -p build
+	export EMLDFLAGS="$$EMLDFLAGS -g2 -s ASSERTIONS=1" && $(PYPY) ./build/pypy3-builder/rpython/bin/rpython --backend=js --opt=jit --inline-threshold=25 --output=./build/pypyjs3-debug.vm.js ./build/pypy3-builder/pypy/goal/targetpypystandalone.py
+
+./build/pypyjs3-nojit.vm.js: | ./build/pypy3-builder/NONEXISTENT
+	mkdir -p build
+	$(PYPY) ./build/pypy3-builder/rpython/bin/rpython --backend=js --opt=2 --translation-backendopt-remove_asserts --inline-threshold=25 --output=./build/pypyjs3-nojit.vm.js ./build/pypy3-builder/pypy/goal/targetpypystandalone.py
+
 # This builds a smaller test program.
 
 ./build/rematcher.js:
@@ -162,3 +226,5 @@ test-jit-backend:
 .PHONY: test-js-module
 test-js-module:
 	$(PYTHON) $(CURDIR)/deps/pypy/pytest.py -vx ./deps/pypy/pypy/module/js
+
+

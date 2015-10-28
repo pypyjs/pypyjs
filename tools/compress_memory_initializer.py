@@ -135,7 +135,7 @@ def compress_memory_file(source_filename):
 
             # Export the function for use by shell code.
 
-            r = re.compile(r"}}\)\s*// EMSCRIPTEN_END_ASM", re.MULTILINE)
+            r = re.compile(r"};?\s*}\)\s*// EMSCRIPTEN_END_ASM", re.MULTILINE)
             match = r.search(jsdata)
             if match is None:
                 raise ValueError("EMSCRIPTEN_END_ASM not found")

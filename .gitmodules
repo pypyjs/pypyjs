@@ -1,3 +1,8 @@
 [submodule "deps/pypy"]
 	path = deps/pypy
 	url = https://github.com/pypyjs/pypy
+	branch = pypyjs
+[submodule "deps/pypy3"]
+	path = deps/pypy3
+	url = https://github.com/pypyjs/pypy
+	branch = pypyjs3
