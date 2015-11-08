@@ -640,7 +640,7 @@ DEFAULT_DISTANCE_DECODER = HuffmanDecoder(
 
 # The following is custom asmjs code to inflat a stream compressed
 # by the `zencode` function above.  It processes the input data
-# one bit at a time, looking up each symbol in the inlne huffman trees.
+# one bit at a time, looking up each symbol in the inline huffman trees.
 
 UNZIP_CODE = """
   function zmeminit(base, zstart, zend) {
