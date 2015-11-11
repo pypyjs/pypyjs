@@ -5,9 +5,6 @@ PyPy.js:  PyPy compiled into JavaScript
 PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
 
-.. image:: https://travis-ci.org/pypyjs/pypyjs.svg?branch=master
-    :target: https://travis-ci.org/pypyjs/pypyjs
-
 This is a very-much-in-flux collection of supporting scripts and infrastructure
 for an experimental emscripten/asmjs backend for PyPy.  You can read more about
 the project (and try it out live!) here:
