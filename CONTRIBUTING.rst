@@ -98,6 +98,23 @@ Similar to the default release, the corresponding pypy repository is here::
     $> cd ../../
     $> make
 
+Transpiling es6
+~~~~~~~~~~~~~~~
+
+PyPy.js is written using es6 and is transpiled to es5 using `babeljs`_. To run the
+code though the transpiler you need `gulp`_ and you'll need a few other
+node_modules, and nodejs ofcourse (I'm assuming you have those installed, npm
+comes with node).
+
+To install the node_modules you need to run `npm install` in the root of the
+repository. And you'll need to install gulp globaly like this
+`npm install gulp -g`.
+
+When you run `gulp` in the repository the es6 source in /src is transpiled to
+es5 and thats copied to /lib.
+
+.. _babeljs: https://babeljs.io
+.. _gulp: https://gulpjs.com
 
 Contributing
 ------------
