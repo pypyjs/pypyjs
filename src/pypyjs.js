@@ -5,8 +5,6 @@
 // Expose the main pypyjs function at global scope for this file,
 // as well as in any module exports or 'window' object we can find.
 
-// Generic debugging printf.
-
 let _dirname;
 
 // Find the directory containing this very file.
