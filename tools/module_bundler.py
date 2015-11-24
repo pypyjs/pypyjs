@@ -540,7 +540,7 @@ class ModuleBundle(object):
             if i >= len(lines):
                 break
             if lines[i].startswith(b"#"):
-                match = re.search(rb"coding[:=]\s*([-\w.]+)", lines[i])
+                match = re.search(b"coding[:=]\\s*([-\\w.]+)", lines[i])
                 if match is not None:
                     encoding = match.group(1)
                     encodingName = encoding.decode("ascii")
