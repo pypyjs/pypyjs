@@ -460,10 +460,6 @@ pypyjs.prototype.fetch = function fetch(relpath, responseType) {
   });
 };
 
-function _blockIndent(code, indent) {
-  return code.replace(/\n/g, `\n${indent}`);
-}
-
 function _escape(value) {
   return value.replace(/\\/g, '\\\\').replace(/'/g, '\\\'');
 }
