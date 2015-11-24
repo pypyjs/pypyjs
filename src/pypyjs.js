@@ -202,7 +202,6 @@ function pypyjs(opts) {
   this._pendingModules = {};
   this._loadedModules = {};
   this._allModules = {};
-  this._modulesToReset = {};
 
   // Allow opts to override default IO streams.
   this.stdin = _opts.stdin || stdio.stdin;
@@ -545,7 +544,6 @@ pypyjs.prototype.ready = function ready() {
 pypyjs.prototype.exec = function exec(code, options) {
   return this._ready.then(() => {
     let promise = Promise.resolve();
-    let preCode;
 
     // Find any "import" statements in the code,
     // and ensure the modules are ready for loading.
@@ -575,9 +573,6 @@ pypyjs.prototype.exec = function exec(code, options) {
       _code = `exec('''${_escape(code)}''' in top_level_scope.__dict__)`;
     }
 
-    if (preCode) {
-      promise = promise.then(() => this._execute_source(_blockIndent(preCode)));
-    }
     return promise.then(() => this._execute_source(_code));
   });
 };
