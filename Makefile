@@ -88,7 +88,7 @@ release-debug: ./build/pypyjs-debug-$(VERSION).tar.gz
 
 ./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
 ./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
-./build/%-$(VERSION).tar.gz: ./build/%.vm.js
+./build/%-$(VERSION).tar.gz: ./build/%.vm.js ./lib/pypyjs.js
 	mkdir -p $(RELDIR)/lib
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypyjs.vm.js
@@ -164,7 +164,7 @@ release3-debug: ./build/pypyjs3-debug-$(VERSION).tar.gz
 
 ./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
 ./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
-./build/%-$(VERSION).tar.gz: ./build/%.vm.js
+./build/%-$(VERSION).tar.gz: ./build/%.vm.js ./lib/pypyjs.js
 	mkdir -p $(RELDIR)/lib
 	# Copy the compiled VM and massage it into the expected shape.
 	cp ./build/$*.vm.js $(RELDIR)/lib/pypyjs.vm.js
