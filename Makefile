@@ -59,7 +59,10 @@ PYPY = $(DOCKER) pypy
 # The default target puts a built interpreter locally in ./lib.
 
 .PHONY: lib
-lib: ./lib/pypyjs.vm.js
+lib: ./lib/pypyjs.js
+
+./lib/pypyjs.js: ./src/pypyjs.js ./src/tests/tests.js ./lib/pypyjs.vm.js
+	node ./node_modules/gulp/bin/gulp.js
 
 ./lib/pypyjs.vm.js: ./build/pypyjs.vm.js
 	cp ./build/pypyjs.vm.js ./lib/
@@ -67,6 +70,7 @@ lib: ./lib/pypyjs.vm.js
 	python ./tools/compress_memory_initializer.py ./lib/pypyjs.vm.js
 	rm -rf ./lib/modules/
 	python tools/module_bundler.py init ./lib/modules/
+
 
 # This makes a releasable tarball containing the compiled pypy interpreter,
 # supporting javascript code, and the python stdlib modules and tooling.

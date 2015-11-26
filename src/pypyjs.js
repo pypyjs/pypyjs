@@ -564,7 +564,7 @@ pypyjs.prototype.exec = function exec(code, options) {
       // Now we can execute the code in custom top-level scope.
       _code = `top_level_scope['__file__'] = '${options.file}'; execfile('${options.file}', top_level_scope.__dict__)`;
     } else {
-      _code = `exec('''${_escape(code)}''' in top_level_scope.__dict__)`;
+      _code = `exec('''${_escape(code)}''', top_level_scope.__dict__)`;
     }
 
     return promise.then(() => this._execute_source(_code));
