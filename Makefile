@@ -100,7 +100,9 @@ release-debug: ./build/pypyjs-debug-$(VERSION).tar.gz
 	cp ./lib/pypyjs.js ./lib/README.txt ./lib/*Promise*.js $(RELDIR)/lib/
 	cp -r ./lib/tests $(RELDIR)/lib/tests
 	# Create an indexed stdlib distribution.
-	python tools/module_bundler.py init $(RELDIR)/lib/modules/
+	# Note that we must run this with matching major python version,
+	# to signal that we want the corresponding libs.
+	if [` echo $< | grep pypyjs3` ]; then python3 tools/module_bundler.py init $(RELDIR)/lib/modules/ ; else python ./tools/module_bundler.py init $(RELDIR)/lib/modules/; fi
 	# Copy tools for managing the distribution.
 	mkdir -p $(RELDIR)/tools
 	cp ./tools/module_bundler.py $(RELDIR)/tools/
@@ -161,33 +163,6 @@ release3-debug: ./build/pypyjs3-debug-$(VERSION).tar.gz
 	mkdir -p ./build/pypy3-builder
 	rsync -ad --exclude=/rpython ./deps/pypy3/ ./build/pypy3-builder/
 	rsync -ad ./deps/pypy/rpython/ ./build/pypy3-builder/rpython/
-
-./build/%-$(VERSION).tar.gz: RELNAME = $*-$(VERSION)
-./build/%-$(VERSION).tar.gz: RELDIR = ./build/$(RELNAME)
-./build/%-$(VERSION).tar.gz: ./build/%.vm.js ./lib/pypyjs.js
-	mkdir -p $(RELDIR)/lib
-	# Copy the compiled VM and massage it into the expected shape.
-	cp ./build/$*.vm.js $(RELDIR)/lib/pypyjs.vm.js
-	python ./tools/extract_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
-	python ./tools/compress_memory_initializer.py $(RELDIR)/lib/pypyjs.vm.js
-	# Cromulate for better compressibility, unless it's a debug build.
-	if [ `echo $< | grep -- -debug` ]; then true ; else python ./tools/cromulate.py -w 1000 $(RELDIR)/lib/pypyjs.vm.js ; fi
-	# Copy the supporting JS library code.
-	cp ./lib/pypyjs.js ./lib/README.txt ./lib/*Promise*.js $(RELDIR)/lib/
-	cp -r ./lib/tests $(RELDIR)/lib/tests
-	# Create an indexed stdlib distribution.
-	# Note that we must run this with python,
-	# to signal that we want the python3 libs.
-	python3 tools/module_bundler.py init $(RELDIR)/lib/modules/
-	# Copy tools for managing the distribution.
-	mkdir -p $(RELDIR)/tools
-	cp ./tools/module_bundler.py $(RELDIR)/tools/
-	# Copy release distribution metadata.
-	cp ./package.json $(RELDIR)/package.json
-	cp ./README.dist.rst $(RELDIR)/README.rst
-	# Tar it up, and we're done.
-	cd ./build && tar -czf $(RELNAME).tar.gz $(RELNAME)
-	rm -rf $(RELDIR)
 
 ./build/pypyjs3.vm.js: | ./build/pypy3-builder/NONEXISTENT
 	mkdir -p build
