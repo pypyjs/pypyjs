@@ -385,7 +385,7 @@ top_level_scope = {'__name__': '__main__', '__package__': None}
 main = types.ModuleType('__main__')
 main.__dict__.update(top_level_scope)
 sys.modules['__main__'] = main
-top_level_scope = main"`;
+top_level_scope = main`;
 
         let code = Module.intArrayFromString(initCode);
         code = Module.allocate(code, 'i8', Module.ALLOC_NORMAL);
@@ -933,7 +933,6 @@ pypyjs.prototype._writeModuleFile = function _writeModuleFile(name, data) {
   const len = Module.lengthBytesUTF8(data);
   const arr = new Uint8Array(len);
   Module.stringToUTF8Array(data, arr, 0, len + 1);
-  this.FS.unlink(fullpath);
   try {
     this.FS.unlink(fullpath);
   } catch (err) {
