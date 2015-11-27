@@ -1,9 +1,15 @@
-
+//
 //  pypyjs:  an experimental in-browser python environment.
 //
 
-// Expose the main pypyjs function at global scope for this file,
-// as well as in any module exports or 'window' object we can find.
+// When transpiled from es6 to es5, this code will get wrapped
+// in a function that takes the encosing global scope as argument.
+// This might be the 'window' object in a browser, or the 'global'
+// object in nodejs.
+
+if (typeof globalScope === 'undefined') {
+  globalScope = {};
+}
 
 let _dirname;
 
@@ -29,25 +35,24 @@ if (_dirname.charAt(_dirname.length - 1) !== '/') {
   _dirname += '/';
 }
 
+
+// Ensure we have references to 'Promise' and 'FunctionPromise'
+// constructors, pulling them in from global scope if possible.
 let Promise;
 let FunctionPromise;
 
 // Ensure we have reference to a 'Promise' constructor.
 if (typeof Promise === 'undefined') {
-  if (this && typeof this.Promise !== 'undefined') {
-    Promise = this.Promise;
+  if (globalScope && typeof globalScope.Promise !== 'undefined') {
+    Promise = globalScope.Promise;
   } else if (typeof require === 'function') {
     Promise = require('./Promise.min.js');
   } else if (typeof load === 'function') {
     load(_dirname + 'Promise.min.js');
     if (typeof Promise === 'undefined') {
-      if (this && typeof this.Promise !== 'undefined') {
-        Promise = this.Promise;
+      if (globalScope && typeof globalScope.Promise !== 'undefined') {
+        Promise = globalScope.Promise;
       }
-    }
-  } else if (typeof window !== 'undefined') {
-    if (typeof window.Promise !== 'undefined') {
-      Promise = window.Promise;
     }
   }
 }
@@ -58,20 +63,16 @@ if (typeof Promise === 'undefined') {
 
 // Ensure we have reference to a 'FunctionPromise' constructor.
 if (typeof FunctionPromise === 'undefined') {
-  if (this && typeof this.FunctionPromise !== 'undefined') {
-    FunctionPromise = this.FunctionPromise;
+  if (globalScope && typeof globalScope.FunctionPromise !== 'undefined') {
+    FunctionPromise = globalScope.FunctionPromise;
   } else if (typeof require === 'function') {
     FunctionPromise = require('./FunctionPromise.js');
   } else if (typeof load === 'function') {
     load(_dirname + 'FunctionPromise.js');
     if (typeof FunctionPromise === 'undefined') {
-      if (this && typeof this.FunctionPromise !== 'undefined') {
-        FunctionPromise = this.FunctionPromise;
+      if (globalScope && typeof globalScope.FunctionPromise !== 'undefined') {
+        FunctionPromise = globalScope.FunctionPromise;
       }
-    }
-  } else if (typeof window !== 'undefined') {
-    if (typeof window.FunctionPromise !== 'undefined') {
-      FunctionPromise = window.FunctionPromise;
     }
   }
 }
@@ -1004,12 +1005,8 @@ if (typeof require !== 'undefined' && typeof module !== 'undefined') {
   }
 }
 
-if (typeof global !== 'undefined') {
-  global.pypyjs = pypyjs;
-}
-
-if (typeof window !== 'undefined') {
-  window.pypyjs = pypyjs;
+if (typeof globalScope.pypyjs === 'undefined') {
+  globalScope.pypyjs = pypyjs;
 }
 
 if (typeof module !== 'undefined') {

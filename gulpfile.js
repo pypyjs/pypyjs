@@ -15,8 +15,8 @@ gulp.task('default', function def() {
     .pipe(eslint.format())
     .pipe(filter)
     .pipe(wrapper({
-      header: '(function() {\n',
-      footer: '\nreturn pypyjs;\n}());'
+      header: '(function(globalScope) {\n',
+      footer: '\nreturn pypyjs;\n}(typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : this));'
     }))
     .pipe(filter.restore)
     .pipe(sourcemaps.write('.'))
