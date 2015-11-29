@@ -983,7 +983,7 @@ const PUBLIC_NAMES = ['ready', 'exec', 'eval', 'execfile', 'get', 'set',
                       'repl', 'loadModuleData'];
 
 PUBLIC_NAMES.forEach((name) => {
-  pypyjs[name] = () => {
+  pypyjs[name] = function() {
     if (!pypyjs._defaultVM) {
       pypyjs._defaultVM = new pypyjs({
         stdin: pypyjs._defaultStdin,
@@ -991,7 +991,6 @@ PUBLIC_NAMES.forEach((name) => {
         stderr: pypyjs._defaultStderr
       });
     }
-
     return pypyjs._defaultVM[name].apply(pypyjs._defaultVM, arguments);
   };
 });

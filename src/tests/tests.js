@@ -105,6 +105,7 @@ pypyjsTestResult
     throw new Error('multi-line import didn\'t work');
   }
 })
+
 // Check that you can create additional VMs using `new`
 .then(() => {
   const vm2 = new pypyjs();
@@ -119,6 +120,16 @@ pypyjsTestResult
         .then((y) => {
           if (typeof y !== 'undefined') {
             throw new Error('name should have been undefined in new VM');
+          }
+        });
+})
+
+// Test use of top-level methods on default vm instance
+.then(() => {
+  return pypyjs.eval('3 + 4')
+        .then((x) => {
+          if (x !== 7) {
+            throw new Error('top-level method method didn\'t work right');
           }
         });
 })
