@@ -58,6 +58,13 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 /usr/bin/emcc: /usr/bin/node
 	mkdir -p /build
+	# LLVM requires cmake 3.4, which is currently not yet available in
+	# standard package repositories. Use the most recent cmake version
+	# available to hopefully avoid for having to upgrade cmake again
+	# in the not so distant future.
+	cd /build; wget https://cmake.org/files/v3.8/cmake-3.8.0-rc4.tar.gz
+	cd /build; tar xf cmake-3.8.0-rc4.tar.gz
+	cd /build/cmake-3.8.0-rc4; ./bootstrap ; make ; make install
 	mkdir -p /var/cache/emscripten/cache
 	chmod -R 777 /var/cache/emscripten
 	# Fetch all the necessary repos.
@@ -72,7 +79,8 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	mv /tmp/socket.h.new /build/emscripten/system/include/libc/sys/socket.h
 	# Build the emscripten-enabled clang toolchain.
 	mkdir -p /tmp/emscripten
-	cd /tmp/emscripten ; /build/emscripten-fastcomp/configure --enable-optimized --disable-assertions --enable-targets=host,js --prefix=/usr
+	cd /tmp/emscripten ; cmake /build/emscripten-fastcomp/ -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86;JSBackend" -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_EXAMPLES=OFF -DCLANG_INCLUDE_TESTS=OFF -DCMAKE_INSTALL_PREFIX=/usr
+
 	cd /tmp/emscripten ; make -j 4
 	cd /tmp/emscripten ; make install
 	# Symlink emcc into system path.
@@ -89,7 +97,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# Pre-compile common emscripten utilities
 	cd /build/emscripten && python embuilder.py build libc
 	cd /build/emscripten && python embuilder.py build native_optimizer
-	cd /build/emscripten && python embuilder.py build struct_info
+	# cd /build/emscripten && python embuilder.py build struct_info
 	# Remove any of the build and vc data that we no longer need.
 	rm -rf /tmp/emscripten
 	rm -rf /build/emscripten-fastcomp
@@ -97,9 +105,11 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 
 
 /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg:
-	svn checkout https://pyv8.googlecode.com/svn/trunk/ /build/pyv8
+	git clone http://github.com/buffer/pyv8.git /build/pyv8
+	cd /build/pyv8; git submodule init; git submodule update
 	cd /build/pyv8; cat setup.py | sed "s/if os.uname/if False and os.uname/g" > setup.py.new; mv setup.py.new setup.py
-	cd /build/pyv8; python setup.py build
+	# For unknown reasons setup.py does not find the tools in depot_tools
+	cd /build/pyv8; PATH=/build/pyv8/depot_tools/:${PATH} python setup.py build
 	cd /build/pyv8; python setup.py install
 	rm -rf /build/pyv8
 
