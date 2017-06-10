@@ -38,7 +38,10 @@ ifeq ($(shell uname -s),Linux)
     # For other platforms we just run as the default docker user, assume
     # that the current directory is somewhere boot2docker can automagically
     # mount it, and hence build artifacts will get sensible permissions.
-    DOCKER_ARGS += -v /etc/passwd:/etc/passwd -u $(USER)
+    # Note that this *doesn't* work in bash-on-windows...
+    ifeq (,$(findstring Microsoft,$(shell uname -r)))
+        DOCKER_ARGS += -v /etc/passwd:/etc/passwd -u $(USER)
+    endif
 endif
 
 ifeq ($(IN_DOCKER), 1)

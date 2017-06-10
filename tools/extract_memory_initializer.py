@@ -72,7 +72,7 @@ try:
         OUTPUT_FILEOBJ.write(data[memory_var_end:match.start()])
 
     # Iterate over all memory allocations, writing each byte into the separate
-    # memory file.  The are ommitted from the source file.
+    # memory file.  They are ommitted from the source file.
 
     for i, match in enumerate(MEMORY_ALLOC_REGEX.finditer(data)):
         # Ensure we write at the correct offset.  The memory initializer

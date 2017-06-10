@@ -30,19 +30,11 @@ docker ps >/dev/null
 cat > $BUILD_DIR/Makefile << END_MAKEFILE
 
 .PHONY: all
-all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg /usr/bin/node /usr/bin/emcc /usr/bin/pypy
-
-
-/usr/bin/node:
-	wget -O /tmp/node-v0.10.36.tar.gz https://nodejs.org/dist/v0.10.36/node-v0.10.36.tar.gz
-	cd /tmp ; tar -xzvf node-v0.10.36.tar.gz
-	cd /tmp/node-v0.10.36 ; ./configure  --prefix=/usr
-	cd /tmp/node-v0.10.36 ; make
-	cd /tmp/node-v0.10.36 ; make install
-	rm -rf /tmp/node-v0.10.36*
+all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg /usr/bin/emcc /usr/bin/pypy
 
 
 /usr/bin/pypy:
+	apt-get install -y git-core python-dev libffi-dev libgc-dev libncurses-dev libz-dev pkg-config
 	mkdir -p /build
 	# Ensure we have the repo checked out.
 	if [ -d /build/pypy ]; then true; else git clone https://github.com/pypyjs/pypy /build/pypy; fi;
@@ -56,63 +48,64 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	rm -rf /build/pypy/.git
 
 
-/usr/bin/emcc: /usr/bin/node
+/usr/bin/emcc: /usr/bin/node /usr/bin/cmake
+	apt-get install -y git-core libffi-dev libgc-dev libncurses-dev libz-dev pkg-config
 	mkdir -p /build
-	# LLVM requires cmake 3.4, which is currently not yet available in
-	# standard package repositories. Use the most recent cmake version
-	# available to hopefully avoid for having to upgrade cmake again
-	# in the not so distant future.
-	cd /build; wget https://cmake.org/files/v3.8/cmake-3.8.0-rc4.tar.gz
-	cd /build; tar xf cmake-3.8.0-rc4.tar.gz
-	cd /build/cmake-3.8.0-rc4; ./bootstrap ; make ; make install
-	mkdir -p /var/cache/emscripten/cache
-	chmod -R 777 /var/cache/emscripten
-	# Fetch all the necessary repos.
-	git clone https://github.com/kripken/emscripten /build/emscripten;
-	git clone https://github.com/kripken/emscripten-fastcomp /build/emscripten-fastcomp
-	git clone https://github.com/kripken/emscripten-fastcomp-clang /build/emscripten-fastcomp/tools/clang
-	cd /build/emscripten ; git checkout -t origin/incoming
-	cd /build/emscripten-fastcomp ; git checkout -t origin/incoming
-	cd /build/emscripten-fastcomp/tools/clang ; git checkout -t origin/incoming
+	wget -O /tmp/emscripten-portable.tar.gz https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
+	cd /build; tar -zxvf /tmp/emscripten-portable.tar.gz
+	cd /build/emsdk-portable; ./emsdk update
+	# We're on a 32-bit system, so clang builds with 32-bit filesystem structures.
+	# But docker-for-windows mounts volumes via CIFS, which has 64-bit inodes.
+	# So we have to do a little hackery to force clang to build with large-file support,
+	# otherwise it will ignore include files mounted into the docker image via CIFS. Bleh.
+	mkdir -p /build/emsdk-portable/clang/fastcomp
+	git clone https://github.com/kripken/emscripten-fastcomp /build/emsdk-portable/clang/fastcomp/src
+	echo 'add_definitions("-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")' > /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new
+	cat /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt >> /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new
+	mv /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt
+	# OK now we can let the SDK build it.
+	cd /build/emsdk-portable; ./emsdk install sdk-master-32bit
+	cd /build/emsdk-portable; ./emsdk activate sdk-master-32bit --global
 	# Hack around problem with missing netlink.h include.
-	grep -v "AF_NETLINK" /build/emscripten/system/include/libc/sys/socket.h > /tmp/socket.h.new
-	mv /tmp/socket.h.new /build/emscripten/system/include/libc/sys/socket.h
-	# Build the emscripten-enabled clang toolchain.
-	mkdir -p /tmp/emscripten
-	cd /tmp/emscripten ; cmake /build/emscripten-fastcomp/ -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86;JSBackend" -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_EXAMPLES=OFF -DCLANG_INCLUDE_TESTS=OFF -DCMAKE_INSTALL_PREFIX=/usr
-
-	cd /tmp/emscripten ; make -j 4
-	cd /tmp/emscripten ; make install
-	# Symlink emcc into system path.
-	ln -s /build/emscripten/emcc /usr/bin/emcc
-	# Initialize emscripten config file
-	echo "EMSCRIPTEN_ROOT = '/build/emscripten'" > /var/cache/emscripten/config
-	echo "LLVM_ROOT = '/usr/bin'" >> /var/cache/emscripten/config
-	echo "TEMP_DIR = '/tmp'" >> /var/cache/emscripten/config
-	echo "NODE_JS = '/usr/bin/node'" >> /var/cache/emscripten/config
-	echo "COMPILER_ENGINE = NODE_JS" >> /var/cache/emscripten/config
-	echo "JS_ENGINES = [NODE_JS]" >> /var/cache/emscripten/config
-	emcc --version > /dev/null
-	emcc --clear-cache > /dev/null
+	grep -v "AF_NETLINK" /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h > /tmp/socket.h.new
+	mv /tmp/socket.h.new /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h
+	# Use system node, rather than the one bundled with emscripten.
+	rm -rf /build/emsdk-portable/node
+	cat /root/.emscripten | grep -v NODE_JS= > /root/.emscripten.new
+	echo "NODE_JS='/usr/bin/node'" | cat - /root/.emscripten.new > /root/.emscripten
+	rm -rf /root/.emscripten.new
 	# Pre-compile common emscripten utilities
-	cd /build/emscripten && python embuilder.py build libc
-	cd /build/emscripten && python embuilder.py build native_optimizer
-	# cd /build/emscripten && python embuilder.py build struct_info
-	# Remove any of the build and vc data that we no longer need.
-	rm -rf /tmp/emscripten
-	rm -rf /build/emscripten-fastcomp
-	rm -rf /build/emscripten/.git
+	cd /build/emsdk-portable ; . ./emsdk_env.sh ; emcc --version > /dev/null
+	cd /build/emsdk-portable ; . ./emsdk_env.sh ; emcc --clear-cache > /dev/null
+	cd /build/emsdk-portable ; . ./emsdk_env.sh ; python ./emscripten/master/embuilder.py build libc
 
 
 /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg:
+	apt-get install -y git-core pkg-config python-dev python-setuptools libboost-system-dev libboost-thread-dev libboost-python-dev
 	git clone http://github.com/buffer/pyv8.git /build/pyv8
 	cd /build/pyv8; git submodule init; git submodule update
 	cd /build/pyv8; cat setup.py | sed "s/if os.uname/if False and os.uname/g" > setup.py.new; mv setup.py.new setup.py
 	# For unknown reasons setup.py does not find the tools in depot_tools
-	cd /build/pyv8; PATH=/build/pyv8/depot_tools/:${PATH} python setup.py build
+	cd /build/pyv8; PATH="/build/pyv8/depot_tools/:\${PATH}" python setup.py build
 	cd /build/pyv8; python setup.py install
 	rm -rf /build/pyv8
 
+
+/usr/bin/node:
+	apt-get install -y python-dev
+	wget -O /tmp/node-v6.10.3.tar.gz https://nodejs.org/dist/v6.10.3/node-v6.10.3.tar.gz
+	cd /tmp ; tar -xzvf node-v6.10.3.tar.gz
+	cd /tmp/node-v6.10.3 ; ./configure  --prefix=/usr
+	cd /tmp/node-v6.10.3 ; make
+	cd /tmp/node-v6.10.3 ; make install
+	rm -rf /tmp/node-v6.10.3*
+
+
+/usr/bin/cmake:
+	wget -O /tmp/cmake-3.8.0-rc4.tar.gz https://cmake.org/files/v3.8/cmake-3.8.0-rc4.tar.gz
+	cd /tmp ; tar -xzvf cmake-3.8.0-rc4.tar.gz
+	cd /tmp/cmake-3.8.0-rc4 ; ./configure --prefix=/usr && make && make install
+	rm -rf /tmp/cmake-*
 
 END_MAKEFILE
 
@@ -125,12 +118,16 @@ FROM rfkelly/linux32
 MAINTAINER Ryan Kelly <ryan@rfk.id.au>
 
 ENV LANG C.UTF-8
-ENV EM_CACHE /var/cache/emscripten/cache
-ENV EM_CONFIG /var/cache/emscripten/config
 
 ADD Makefile /build/Makefile
 
 RUN make -C /build all
+
+ENV PATH /build/emsdk-portable:/build/emsdk-portable/clang/fastcomp/build_master_32/bin:/build/emsdk-portable/emscripten/master:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV EMSDK /build/emsdk-portable
+ENV EM_CONFIG /root/.emscripten
+ENV BINARYEN_ROOT /build/emsdk-portable/clang/bin/binaryen
+ENV EMSCRIPTEN /build/emsdk-portable/emscripten/bin
 
 END_DOCKERFILE
 

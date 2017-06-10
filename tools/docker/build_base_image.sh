@@ -10,7 +10,7 @@
 # Pre-requisites:
 #
 #    * docker, and a running docker daemon
-#    * deboostrap, and running as root so it will work correctly
+#    * a basic linux-like environment shell environment
 #
 
 set -e
@@ -23,23 +23,30 @@ trap "rm -rf $BUILD_DIR" EXIT
 
 docker ps >/dev/null
 
-# Create a bare-bones 32-bit debian chroot.
-
-CHROOT_DIR="$BUILD_DIR/chroot"
-debootstrap --arch i386 wheezy $CHROOT_DIR http://http.debian.net/debian/
-
+# Use the default debian docker image, to create a bare-bones 32-bit debian chroot.
 # It needs a couple of 64-bit libs in it to allow docker to work correctly.
-# XXX TODO: will they always be in these locations?
 
-mkdir $CHROOT_DIR/lib64
-cp /usr/lib/libpthread.so.0 $CHROOT_DIR/lib64
-cp /lib/libc.so.6 $CHROOT_DIR/lib64
-cp /lib64/ld-linux-x86-64.so.2 $CHROOT_DIR/lib64
+echo "Building 32-bit chroot..."
 
-# Import it into a base docker image
+docker run --privileged -i --rm -v /tmp:/tmp debian:stable-slim > $BUILD_DIR/chroot.tar.gz sh << END_BUILD_SCRIPT
 
-BASE_IMAGE_ID=`tar -cf - -C $CHROOT_DIR . | docker import -`
-rm -rf $CHROOT_DIR
+apt-get update >&2 && \
+apt-get install -y debootstrap >&2 && \
+debootstrap --arch i386 stable /my-chroot http://deb.debian.org/debian/ >&2 && \
+mkdir /my-chroot/lib64 && \
+cp /lib/x86_64-linux-gnu/libpthread.so.0 /my-chroot/lib64 && \
+cp /lib/x86_64-linux-gnu/libc.so.6 /my-chroot/lib64 && \
+cp /lib64/ld-linux-x86-64.so.2 /my-chroot/lib64 && \
+tar -cz -C /my-chroot . | cat
+
+END_BUILD_SCRIPT
+
+# Import the chroot into a base docker image
+
+echo "Convering to docker image..."
+
+BASE_IMAGE_ID=`gunzip -c $BUILD_DIR/chroot.tar.gz | docker import -`
+rm -rf $BUILD_DIR/chroot.tar.gz
 
 # Use docker to chroot into it and do updates etc.
 
@@ -58,20 +65,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         build-essential \
-        subversion \
-        git-core \
         vim \
         wget \
-        libffi-dev \
-        libgc-dev \
-        libncurses-dev \
-        libz-dev \
-        pkg-config \
-        python-dev \
-        python-setuptools \
-        libboost-system-dev \
-        libboost-thread-dev \
-        libboost-python-dev \
     && apt-get clean
 
 END_DOCKERFILE
