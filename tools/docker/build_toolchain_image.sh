@@ -52,7 +52,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	apt-get install -y git-core libffi-dev libgc-dev libncurses-dev libz-dev pkg-config
 	mkdir -p /build
 	wget -O /tmp/emscripten-portable.tar.gz https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
-	cd /build; tar -zxvf /tmp/emscripten-portable.tar.gz
+	cd /build; tar -zxvf /tmp/emscripten-portable.tar.gz ; rm /tmp/emscripten-portable.tar.gz
 	cd /build/emsdk-portable; ./emsdk update
 	# We're on a 32-bit system, so clang builds with 32-bit filesystem structures.
 	# But docker-for-windows mounts volumes via CIFS, which has 64-bit inodes.
@@ -66,6 +66,7 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# OK now we can let the SDK build it.
 	cd /build/emsdk-portable; ./emsdk install sdk-master-32bit
 	cd /build/emsdk-portable; ./emsdk activate sdk-master-32bit --global
+	ln -s /build/emsdk-portable/emscripten/master/emcc /usr/bin/emcc
 	# Hack around problem with missing netlink.h include.
 	grep -v "AF_NETLINK" /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h > /tmp/socket.h.new
 	mv /tmp/socket.h.new /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h
