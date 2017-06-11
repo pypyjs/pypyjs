@@ -34,27 +34,6 @@ try:
     with open(SOURCE_FILE, "r") as f:
         data = f.read().strip()
 
-    # Find the point where the memoryInitializer variable is declared.
-    # This lets us sanity-check whether there is actually inline memory data,
-    # and re-write it to point to our output file if so.
-
-    MEMORY_VAR_REGEX = re.compile(r"var\s+memoryInitializer\s*=\s*")
-    match = MEMORY_VAR_REGEX.search(data)
-    if match is None:
-        raise ValueError("no memoryInitializer variable found")
-
-    memory_var_end = match.end() + 4
-    if data[match.end():memory_var_end] != "null":
-        raise ValueError("non-null memoryInitializer variable found")
-    if data.find("var memoryInitializer", memory_var_end) >= 0:
-        raise ValueError("non-null memoryInitializer variable found")
-
-    OUTPUT_FILEOBJ.write(data[:match.end()])
-    OUTPUT_FILEOBJ.write('"')
-    OUTPUT_FILEOBJ.write(os.path.basename(MEMORY_FILE))
-    OUTPUT_FILEOBJ.write('"')
-    
-
     # This regex locates memory allocations relative to Runtime.GLOBAL_BASE,
     # which AFAICT uniquely indicates inline memory-initializer data.  It 
     # matches up to two sub-groups:
@@ -64,12 +43,18 @@ try:
 
     MEMORY_ALLOC_REGEX = re.compile(r'allocate\(\s*\[([0-9,\s]+)\],\s*"i8",\s*ALLOC_NONE,\s*Runtime.GLOBAL_BASE(\s*\+\s*[0-9e]+)?\);')
 
-    # Find the first memory allocation, so we can write out any code between
-    # memory_var_end and the actual memory data.
+    # Find the first memory allocation.
+    # We're going to replace it with the definition of the
+    # async memory-initializer loader.
 
     match = MEMORY_ALLOC_REGEX.search(data)
-    if match is not None:
-        OUTPUT_FILEOBJ.write(data[memory_var_end:match.start()])
+    if match is None:
+        raise ValueError("no global memory initialization found")
+
+    OUTPUT_FILEOBJ.write(data[:match.start()])
+    OUTPUT_FILEOBJ.write("var memoryInitializer=\"")
+    OUTPUT_FILEOBJ.write(os.path.basename(MEMORY_FILE))
+    OUTPUT_FILEOBJ.write("\";")
 
     # Iterate over all memory allocations, writing each byte into the separate
     # memory file.  They are ommitted from the source file.
@@ -98,17 +83,9 @@ try:
         FINAL_POSTAMBLE = "\n" + FINAL_POSTAMBLE + ";"
     assert data.endswith("}" + FINAL_POSTAMBLE)
 
-    if match is None:
-        OUTPUT_FILEOBJ.write(data[memory_var_end:-len(FINAL_POSTAMBLE)])
-    else:
-        OUTPUT_FILEOBJ.write(data[match.end():-len(FINAL_POSTAMBLE)])
+    OUTPUT_FILEOBJ.write(data[match.end():-len(FINAL_POSTAMBLE)])
     OUTPUT_FILEOBJ.write("""
-      if (memoryInitializer) {
-        if (typeof Module['locateFile'] === 'function') {
-          memoryInitializer = Module['locateFile'](memoryInitializer);
-        } else if (Module['memoryInitializerPrefixURL']) {
-          memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
-        }
+        memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
         if (ENVIRONMENT_IS_NODE || ENVIRONMENT_IS_SHELL) {
           var data = Module['readBinary'](memoryInitializer);
           HEAPU8.set(data, Runtime.GLOBAL_BASE);
@@ -119,32 +96,10 @@ try:
             HEAPU8.set(data, Runtime.GLOBAL_BASE);
             removeRunDependency('memory initializer');
           }
-          var request = Module['memoryInitializerRequest'];
-          if (request) {
-            // a network request has already been created, just use that
-            if (request.response) {
-              setTimeout(function() {
-                applyMemoryInitializer(request.response);
-              }, 0); // it's already here; but, apply it asynchronously
-            } else {
-              request.addEventListener('load', function() { // wait for it
-                if (request.status !== 200 && request.status !== 0) {
-                  console.warn('a problem seems to have happened with Module.memoryInitializerRequest, status: ' + request.status);
-                }
-                if (!request.response || typeof request.response !== 'object' || !request.response.byteLength) {
-                  console.warn('a problem seems to have happened with Module.memoryInitializerRequest response (expected ArrayBuffer): ' + request.response);
-                }
-                applyMemoryInitializer(request.response);
-              });
-            }
-          } else {
-            // fetch it from the network ourselves
-            Browser.asyncLoad(memoryInitializer, applyMemoryInitializer, function() {
-              throw 'could not load memory initializer ' + memoryInitializer;
-            });
-          }
+          Browser.asyncLoad(memoryInitializer, applyMemoryInitializer, function() {
+            throw 'could not load memory initializer ' + memoryInitializer;
+          });
         }
-      }
     """)
     OUTPUT_FILEOBJ.write(FINAL_POSTAMBLE)
 
@@ -154,4 +109,3 @@ except BaseException:
     raise
 else:
     os.rename(OUTPUT_FILE, SOURCE_FILE)
-

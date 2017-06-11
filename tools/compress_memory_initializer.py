@@ -1,5 +1,5 @@
 #
-#  Compress inline memory initializer for emscripten-compiled file.
+#  Compress memory initializer for emscripten-compiled file.
 #
 #  Given an emscripten-compiled .js file with corresponding .js.mem file
 #  for its memory initializer, this script will replace the memory initializer
@@ -18,7 +18,7 @@
 #  Like deflate, literals and match lengths are combined into a single alphabet
 #  and compressed using a huffman code, while distances are compressed using
 #  a separate huffman code.  Unlike deflate, there are no block boundaries,
-#  no extra-bits for encoding distnces, and we use a single huffman code for
+#  no extra-bits for encoding distances, and we use a single huffman code for
 #  the entire string rather than constructing custom codes for each block.
 #
 #  The format of the compressed data is:

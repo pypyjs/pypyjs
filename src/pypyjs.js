@@ -246,7 +246,7 @@ function pypyjs(opts) {
 
         // Call dependenciesFulfilled if it won't be done automatically.
         'dependenciesFulfilled=function() { inDependenciesFulfilled(FS); };',
-        'if(!memoryInitializer||(!ENVIRONMENT_IS_WEB&&!ENVIRONMENT_IS_WORKER))dependenciesFulfilled();',
+        'if(typeof memoryInitializer==="undefined"||!memoryInitializer||(!ENVIRONMENT_IS_WEB&&!ENVIRONMENT_IS_WORKER))dependenciesFulfilled();',
       ].join('\r\n');
       return new FunctionPromise('Module', 'inDependenciesFulfilled', 'require',
                              'module', '__filename', '_dirname', funcBody);
@@ -983,7 +983,7 @@ const PUBLIC_NAMES = ['ready', 'exec', 'eval', 'execfile', 'get', 'set',
                       'repl', 'loadModuleData'];
 
 PUBLIC_NAMES.forEach((name) => {
-  pypyjs[name] = function() {
+  pypyjs[name] = function anon() {
     if (!pypyjs._defaultVM) {
       pypyjs._defaultVM = new pypyjs({
         stdin: pypyjs._defaultStdin,

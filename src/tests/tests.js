@@ -28,11 +28,11 @@ pypyjsTestResult
 .then(() => vm.exec('raise ValueError(42)'))
 .then(() => { throw new Error('Python exception did not trigger js Error'); },
 (err) => {
-  if (!err instanceof pypyjs.Error) {
-    throw new Error('Python exception didn\'t trigger vm.Error instance');
+  if (!(err instanceof pypyjs.Error)) {
+    throw new Error('Python exception didn\'t trigger vm.Error instance: ' + err);
   }
   if (err.name !== 'ValueError' || err.message !== '42') {
-    throw new Error('Python exception didn\'t trigger correct error info');
+    throw new Error('Python exception didn\'t trigger correct error info: ' + err);
   }
 })
 
@@ -70,13 +70,18 @@ pypyjsTestResult
 })
 
 // Check that get() propagates errors other than involved in getting the variable.
-.then(() => vm.get('__name__ + 5'))
-.catch((exc) => {
-  if (typeof exc === 'undefined') {
-    throw new Error('expected to receive an exception');
-  } else if (exc.name !== 'TypeError') {
-    throw new Error('expected to receive a TypeError');
-  }
+.then(() => {
+  return vm.get('__name__ + 5')
+  .then(
+    () => { throw new Error('should have thrown an error'); },
+    (exc) => {
+      if (typeof exc === 'undefined') {
+        throw new Error('expected to receive an exception');
+      } else if (exc.name !== 'TypeError') {
+        throw new Error('expected to receive a TypeError');
+      }
+    }
+  );
 })
 
 // Check that we execute in correctly-__name__'d python scope.

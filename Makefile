@@ -74,13 +74,13 @@ PYPY = $(DOCKER) pypy
 .PHONY: lib
 lib: ./lib/pypyjs.js
 
-./lib/pypyjs.js: ./src/pypyjs.js ./src/tests/tests.js ./lib/pypyjs.vm.js
+./lib/pypyjs.js: ./src/pypyjs.js ./src/tests/tests.js ./lib/pypyjs.vm.js ./node_modules/gulp/bin/gulp.js
 	node ./node_modules/gulp/bin/gulp.js
 
 ./lib/pypyjs.vm.js: ./build/pypyjs.vm.js
 	cp ./build/pypyjs.vm.js ./lib/
 	python ./tools/extract_memory_initializer.py ./lib/pypyjs.vm.js
-	python ./tools/compress_memory_initializer.py ./lib/pypyjs.vm.js
+	#python ./tools/compress_memory_initializer.py ./lib/pypyjs.vm.js
 	rm -rf ./lib/modules/
 	python tools/module_bundler.py init ./lib/modules/
 
@@ -193,6 +193,10 @@ release3-debug: ./build/pypyjs3-debug-$(VERSION).tar.gz
 
 ./build/tmp:
 	mkdir -p ./build/tmp
+
+./node_modules/gulp/bin/gulp.js: package.json
+	npm install
+	touch ./node_modules/gulp/bin/gulp.js
 
 # Convenience target to launch a shell in the dockerized build environment.
 
