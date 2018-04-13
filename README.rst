@@ -2,6 +2,8 @@
 PyPy.js:  PyPy compiled into JavaScript
 =======================================
 
+**Note:** Development is sleeping at the moment. Discuss this here: https://github.com/pypyjs/pypyjs/issues/213
+
 PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
 
