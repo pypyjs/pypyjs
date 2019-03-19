@@ -2,7 +2,8 @@
 PyPy.js:  PyPy compiled into JavaScript
 =======================================
 
-**Note:** Development is sleeping at the moment. Discuss this here: https://github.com/pypyjs/pypyjs/issues/213
+**Note:** Development is sleeping at the moment. Discuss this here: https://github.com/pypyjs/pypyjs/issues/213.
+Look at `iodide <https://iodide.io>`_ (specifically, `pyodide <https://github.com/iodide-project/pyodide>`_) for a maintained and heavily developed alternative.
 
 PyPy.  Compiled into JavaScript.  JIT-compiling to JavaScript at runtime.
 Because why not.
