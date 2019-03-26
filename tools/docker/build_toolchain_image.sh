@@ -30,7 +30,7 @@ docker ps >/dev/null
 cat > $BUILD_DIR/Makefile << END_MAKEFILE
 
 .PHONY: all
-all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg /usr/bin/emcc /usr/bin/pypy
+all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg /usr/bin/emcc /usr/bin/pypy /usr/bin/js
 
 
 /usr/bin/pypy:
@@ -60,16 +60,17 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# otherwise it will ignore include files mounted into the docker image via CIFS. Bleh.
 	mkdir -p /build/emsdk-portable/clang/fastcomp
 	git clone https://github.com/kripken/emscripten-fastcomp /build/emsdk-portable/clang/fastcomp/src
+	cd /build/emsdk-portable/clang/fastcomp/src ; git checkout -t origin/incoming
 	echo 'add_definitions("-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")' > /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new
 	cat /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt >> /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new
 	mv /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt.new /build/emsdk-portable/clang/fastcomp/src/CMakeLists.txt
 	# OK now we can let the SDK build it.
-	cd /build/emsdk-portable; ./emsdk install sdk-master-32bit
-	cd /build/emsdk-portable; ./emsdk activate sdk-master-32bit --global
-	ln -s /build/emsdk-portable/emscripten/master/emcc /usr/bin/emcc
+	cd /build/emsdk-portable; ./emsdk install sdk-incoming-32bit
+	cd /build/emsdk-portable; ./emsdk activate sdk-incoming-32bit --global
+	ln -s /build/emsdk-portable/emscripten/incoming/emcc /usr/bin/emcc
 	# Hack around problem with missing netlink.h include.
-	grep -v "AF_NETLINK" /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h > /tmp/socket.h.new
-	mv /tmp/socket.h.new /build/emsdk-portable/emscripten/master/system/include/libc/sys/socket.h
+	grep -v "AF_NETLINK" /build/emsdk-portable/emscripten/incoming/system/include/libc/sys/socket.h > /tmp/socket.h.new
+	mv /tmp/socket.h.new /build/emsdk-portable/emscripten/incoming/system/include/libc/sys/socket.h
 	# Use system node, rather than the one bundled with emscripten.
 	rm -rf /build/emsdk-portable/node
 	cat /root/.emscripten | grep -v NODE_JS= > /root/.emscripten.new
@@ -78,7 +79,8 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	# Pre-compile common emscripten utilities
 	cd /build/emsdk-portable ; . ./emsdk_env.sh ; emcc --version > /dev/null
 	cd /build/emsdk-portable ; . ./emsdk_env.sh ; emcc --clear-cache > /dev/null
-	cd /build/emsdk-portable ; . ./emsdk_env.sh ; python ./emscripten/master/embuilder.py build libc
+	cd /build/emsdk-portable ; . ./emsdk_env.sh ; python ./emscripten/incoming/embuilder.py build libc
+	cd /build/emsdk-portable ; . ./emsdk_env.sh ; python ./emscripten/incoming/embuilder.py build binaryen
 
 
 /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg:
@@ -108,6 +110,16 @@ all: /usr/local/lib/python2.7/dist-packages/PyV8-1.0_dev-py2.7-linux-x86_64.egg 
 	cd /tmp/cmake-3.8.0-rc4 ; ./configure --prefix=/usr && make && make install
 	rm -rf /tmp/cmake-*
 
+
+/usr/bin/js:
+	apt-get install unzip patchelf
+	wget -O /tmp/jsshell.zip https://archive.mozilla.org/pub/firefox/nightly/latest-mozilla-central/jsshell-linux-i686.zip
+	mkdir -p /build/jsshell
+	cd /build/jsshell ; unzip /tmp/jsshell.zip
+	rm -rf /tmp/jsshell.zip
+	patchelf --set-rpath /build/jsshell /build/jsshell/js
+	ln -s /build/jsshell/js /usr/bin/js
+
 END_MAKEFILE
 
 # Use docker to chroot into it and complete the setup.
@@ -124,7 +136,7 @@ ADD Makefile /build/Makefile
 
 RUN make -C /build all
 
-ENV PATH /build/emsdk-portable:/build/emsdk-portable/clang/fastcomp/build_master_32/bin:/build/emsdk-portable/emscripten/master:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH /build/emsdk-portable:/build/emsdk-portable/clang/fastcomp/build_incoming_32/bin:/build/emsdk-portable/emscripten/incoming:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV EMSDK /build/emsdk-portable
 ENV EM_CONFIG /root/.emscripten
 ENV BINARYEN_ROOT /build/emsdk-portable/clang/bin/binaryen
